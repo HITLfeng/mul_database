@@ -65,3 +65,44 @@ bool IsDbNameExist(const char *dbName)
     }
     return false;
 }
+
+Status DmGetDbCtrlByName(const char *dbName)
+{
+    DB_POINT2(g_srDbCtrlManager, dbName);
+    for (uint32_t i = 0; i < DbVectorGetSize(&g_srDbCtrlManager->dbCtrlList); i++)
+    {
+        SrDbCtrlT *dbCtrl = (SrDbCtrlT *)DbVectorGetItem(&g_srDbCtrlManager->dbCtrlList, i);
+        if (dbCtrl == NULL)
+        {
+            // 理论上不会走到这里
+            log_error("DmGetDbCtrlByName: get dbCtrl failed.");
+            return NULL;
+        }
+        if (strcmp(dbCtrl->dbName, dbName) == 0)
+        {
+            return dbCtrl;
+        }
+    }
+    return NULL;
+}
+
+Status RemoveDbCtrlByName(const char *dbName)
+{
+    DB_POINT2(g_srDbCtrlManager, dbName);
+    for (uint32_t i = 0; i < DbVectorGetSize(&g_srDbCtrlManager->dbCtrlList); i++)
+    {
+        SrDbCtrlT *dbCtrl = (SrDbCtrlT *)DbVectorGetItem(&g_srDbCtrlManager->dbCtrlList, i);
+        if (dbCtrl == NULL)
+        {
+            // 理论上不会走到这里
+            log_error("get dbCtrl failed when RemoveDbCtrlByName.");
+            return GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL;
+        }
+        if (strcmp(dbCtrl->dbName, dbName) == 0)
+        {
+            DbVectorRemoveItem(&g_srDbCtrlManager->dbCtrlList, i);
+            return GMERR_OK;
+        }
+    }
+    return GMERR_OK;
+}

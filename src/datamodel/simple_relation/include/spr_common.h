@@ -38,6 +38,10 @@ uint32_t GenSrTableId(void);
 
 SrDbCtrlManagerT *GetDbCtrlManager(void);
 bool IsDbNameExist(const char *dbName);
+Status RemoveDbCtrlByName(const char *dbName);
+
+void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
+void DmClearAllLabels(const char *dbName);
 
 
 #endif // __SPR_COMMON_H__
