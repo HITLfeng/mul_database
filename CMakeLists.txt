@@ -7,6 +7,8 @@ project(kv-database)
 # set(CMAKE_CXX_STANDARD 11)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 设置base路径
+set(BASE_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 # src的路径
 set(SERVER_PATH ${CMAKE_CURRENT_SOURCE_DIR}/src)
 

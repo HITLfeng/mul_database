@@ -19,9 +19,9 @@ public:
 
 TEST_F(KVCalcTest, ConnectTest)
 {
-    KVConnectT *conn = (KVConnectT *)malloc(sizeof(KVConnectT));
+    DbConnectT *conn = (DbConnectT *)malloc(sizeof(DbConnectT));
     ASSERT_FALSE(conn == NULL);
-    memset(conn, 0, sizeof(KVConnectT));
+    memset(conn, 0, sizeof(DbConnectT));
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
@@ -37,9 +37,9 @@ TEST_F(KVCalcTest, ConnectTest)
 
 TEST_F(KVCalcTest, ConnectTryManyTest)
 {
-    KVConnectT *conn = (KVConnectT *)malloc(sizeof(KVConnectT));
+    DbConnectT *conn = (DbConnectT *)malloc(sizeof(DbConnectT));
     ASSERT_FALSE(conn == NULL);
-    memset(conn, 0, sizeof(KVConnectT));
+    memset(conn, 0, sizeof(DbConnectT));
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 

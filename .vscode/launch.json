@@ -1,0 +1,51 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "启动服务端",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "/root/project/all2023/kv-database/output/bin/kvserver",
+            "cwd": "/root/project/all2023/kv-database/output/bin/",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "启用断点",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "编译服务端"
+        },
+        {
+            "name": "启动客户端",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/client/main.cpp",
+            "args": [
+                "--gtest_filter=YourTestFilter"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/usr/bin/gdb",
+            "setupCommands": [
+                {
+                    "description": "启用断下",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ],
+            // "preLaunchTask": "编译客户端"
+        }
+    ]
+    // "compounds": [
+    //     {
+    //         "name": "同时启动客户端和服务端",
+    //         "configurations": ["启动服务端", "启动客户端"]
+    //     }
+    // ]
+}

@@ -32,7 +32,7 @@ CliStatus KVCSrvStop(void)
     system("killall kvserver");
 }
 
-CliStatus KVCConnect(KVConnectT *conn)
+CliStatus KVCConnect(DbConnectT *conn)
 {
     DB_POINT(conn);
     int sock;
@@ -66,14 +66,14 @@ CliStatus KVCConnect(KVConnectT *conn)
     return GMERR_OK;
 }
 
-CliStatus KVCDisconnect(KVConnectT *conn)
+CliStatus KVCDisconnect(DbConnectT *conn)
 {
     DB_POINT(conn);
     close(conn->socketFd);
     return GMERR_OK;
 }
 
-CliStatus KVCSend(KVConnectT *conn, const MsgBufRequestT *msgBuf)
+CliStatus KVCSend(DbConnectT *conn, const MsgBufRequestT *msgBuf)
 {
     DB_POINT(conn);
     int sendRet = write(conn->socketFd, (const void *)msgBuf, sizeof(MsgBufRequestT));
@@ -85,7 +85,7 @@ CliStatus KVCSend(KVConnectT *conn, const MsgBufRequestT *msgBuf)
     return GMERR_OK;
 }
 
-CliStatus KVCRecv(KVConnectT *conn, MsgBufResponseT *msgBuf)
+CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf)
 {
     DB_POINT(conn);
     char message[sizeof(MsgBufResponseT)];

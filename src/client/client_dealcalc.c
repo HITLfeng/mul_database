@@ -1,10 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-
 #include "../interface/include/outfunction.h"
 // #include "outfunction.h"
 
@@ -40,7 +33,7 @@ CliStatus CltParseCalcMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result)
     return GMERR_OK;
 }
 
-CliStatus KVCCalcTwoNumber(KVConnectT *conn, int x, int y, CalcOptionT opt, UsrResultBaseT *result)
+CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrResultBaseT *result)
 {
     DB_POINT2(conn, result);
     OperatorCode opCode = OP_ADD_TEST;
@@ -55,7 +48,7 @@ CliStatus KVCCalcTwoNumber(KVConnectT *conn, int x, int y, CalcOptionT opt, UsrR
     if (ret != GMERR_OK) {
         return ret;
     }
-    normal_info("send calc request succ");
+    normal_info("send calc request succ KVCCalcTwoNumber.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -63,7 +56,7 @@ CliStatus KVCCalcTwoNumber(KVConnectT *conn, int x, int y, CalcOptionT opt, UsrR
     if (ret != GMERR_OK) {
         return ret;
     }
-    normal_info("recv calc result succ");
+    normal_info("recv calc result succ KVCCalcTwoNumber.");
     // 解析服务器返回的消息
     ret = CltParseCalcMsgBuf(&respBuf, result);
     if (ret != GMERR_OK) {

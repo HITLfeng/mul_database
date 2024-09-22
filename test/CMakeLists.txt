@@ -7,7 +7,7 @@ project(testDemo)
 # set(CMAKE_CXX_STANDARD 11)
 # set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(HOME /root/project/all2023/kv-database)
+set(HOME ${BASE_PATH})
 set(EXECUTABLE_OUTPUT_PATH ${HOME}/test)
 
 SET(CMAKE_BUILD_TYPE "Debug") 
