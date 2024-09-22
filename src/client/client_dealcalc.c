@@ -7,10 +7,7 @@
 #include "../common/include/seri_utils.h"
 // #include "seri_utils.h"
 
-uint8_t *GetUsrDataPosition(uint8_t *usrMsgBuf)
-{
-    return usrMsgBuf + sizeof(MsgBufResponseHeadT);
-}
+#include "include/client_common.h"
 
 void SetCalcUsrMsgBuf(char *usrMsgBuf, int x, int y, CalcOptionT opt)
 {

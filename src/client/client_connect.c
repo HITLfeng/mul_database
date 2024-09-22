@@ -12,6 +12,11 @@
 #include "../common/include/common.h"
 // #include "common.h"
 
+uint8_t *GetUsrDataPosition(uint8_t *usrMsgBuf)
+{
+    return usrMsgBuf + sizeof(MsgBufResponseHeadT);
+}
+
 void *srvStartDetach(void *arg)
 {
     system("kvserver");

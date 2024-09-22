@@ -31,6 +31,11 @@ extern "C" {
 #define error_info(format, ...)
 #endif
 
+
+// 规格约束
+#define SR_DB_NAME_MAX_LENGTH 128
+
+
 /*
  * error no
  */
@@ -40,8 +45,9 @@ typedef uint32_t Status;
 
 // common 错误码
 #define GMERR_OK 0
-#define GMERR_MEMORY_ALLOC_FAILED 1000001
-#define GMERR_SOCKET_FAILED 1000002
+#define GMERR_SOCKET_FAILED 1000001
+#define GMERR_MEMORY_ALLOC_FAILED 1000002
+#define GMERR_KV_MEMORY_ALLOC_FAILED 1000003
 
 // 测试错误码
 #define GMERR_ADD_TEST_INVAILD_OPTION 1001003
@@ -50,6 +56,10 @@ typedef uint32_t Status;
 // RUNTIME 模块错误码
 #define GMERR_RUNTIME_UNKNOWN_OPCODE 1002000
 #define GMERR_RUNTIME_INVAILD_BUFLENGTH 1002001
+
+#define GMERR_SRDB_OP_CODE_INVAILD 1002101
+
+
 
 // CLIENT 模块错误码
 #define GMERR_CLIENT_SOCKET_FAILED 2001001
@@ -62,22 +72,45 @@ typedef uint32_t Status;
 // STORAGE 模块错误码
 #define GMERR_STORAGE_MEMPOOL_INIT_FAILED 3001001
 
+// DATAMODEL 模块错误码
+#define GMERR_DATAMODEL_SRDB_NAME_NULL 4001001
+#define GMERR_DATAMODEL_SRDB_NAME_TOO_LONG 4001002
+#define GMERR_DATAMODEL_SRDB_GET_GMANGER_FAILED 4001003
+#define GMERR_DATAMODEL_SRDB_NAME_EXISTED 4001004
 
 /*
  * 断言非空函数
  */
 #define DB_ASSERT(pointer) assert(pointer)
 
-inline static void DB_POINT(void *pointer1)
+inline static void DB_POINT(const void *pointer1)
 {
     assert(pointer1 != NULL);
 }
 
-inline static void DB_POINT2(void *pointer1, void *pointer2)
+inline static void DB_POINT2(const void *pointer1, const void *pointer2)
 {
     assert(pointer1 != NULL);
     assert(pointer2 != NULL);
 }
+
+inline static void DB_POINT3(const void *pointer1, const void *pointer2, const void *pointer3)
+{
+    assert(pointer1 != NULL);
+    assert(pointer2 != NULL);
+    assert(pointer3 != NULL);
+}
+
+// simple rel 相关传递机构体
+typedef struct SimpleRelExecCtx
+{
+    char dbName[SR_DB_NAME_MAX_LENGTH];
+    char labelName[SR_DB_NAME_MAX_LENGTH];
+    uint32_t dbId;
+    uint32_t labelId;
+    uint32_t fieldCnt;
+    uint32_t *fieldType;
+} SimpleRelExecCtxT;
 
 #ifdef __cplusplus
 }

@@ -1,3 +1,6 @@
+#ifndef __OUT_FUNCTION_H__
+#define __OUT_FUNCTION_H__
+
 #include "out_type_defs.h"
 
 typedef uint32_t CliStatus;
@@ -64,3 +67,5 @@ CliStatus SRCDeleteData(DbConnectT *conn, const char *labelName, const char *key
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // __OUT_FUNCTION_H__

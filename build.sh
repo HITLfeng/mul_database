@@ -11,6 +11,7 @@ case "$1" in
         rm -rf ./output/bin
         rm -rf ./output/lib
         rm -rf ./output/include
+        rm -rf ./test/kv-test
         echo "clearing done!"
         ;;
     *)

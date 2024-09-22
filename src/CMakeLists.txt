@@ -10,6 +10,8 @@ set(MAIN_PATH ${CMAKE_CURRENT_SOURCE_DIR}/main)
 set(RUNTIME_PATH ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
 # storage模块的路径
 set(STORAGE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/storage)
+# datamodel模块的路径
+set(DATAMODEL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/datamodel)
 # common模块的路径
 set(COMMON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/common)
 # interface 模块的路径
@@ -17,6 +19,7 @@ set(INTERFACE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/interface)
 
 add_subdirectory(common)
 # add_subdirectory(interface)
+add_subdirectory(datamodel)
 add_subdirectory(runtime)
 # add_subdirectory(storage)
 add_subdirectory(main)

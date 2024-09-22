@@ -16,7 +16,7 @@ typedef struct DbVector
     void *data;
 } DbVectorT;
 
-void DbVectorInit(DbVectorT *vector, uint32_t itemSize); // 初始化vector itemSize 存放内容大小
+Status DbVectorInit(DbVectorT *vector, uint32_t itemSize); // 初始化vector itemSize 存放内容大小
 
 Status DbVectorAppendItem(DbVectorT *vector, void *item);
 

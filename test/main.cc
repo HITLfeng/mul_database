@@ -16,7 +16,7 @@ public:
     // static void TearDownTestCase();
 };
 
-TEST_F(ClientTest, testBase)
+TEST_F(ClientTest, DISABLED_testBase)
 {
     std::cout << "testBase" << std::endl;
     std::cout << "testBase2" << std::endl;

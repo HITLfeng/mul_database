@@ -10,12 +10,24 @@ extern "C"
 {
 #endif
 
+
 #define SR_LABEL_MAX_FILED_CNT 30
+#define SR_DBNAME_MAX_LENGTH 128
 
 
 typedef enum OperatorCode
 {
     OP_ADD_TEST = 0,
+    // SIMPLE RELATION 
+    OP_SIMREL_CREATE_DB = 10,
+    OP_SIMREL_DROP_DB,
+    OP_SIMREL_CREATE_TABLE,
+    OP_SIMREL_DROP_TABLE,
+    OP_SIMREL_INSERT_DATA,
+    OP_SIMREL_DELETE_DATA,
+    OP_SIMREL_QUERY_DATA,
+
+    // END
     OP_BUTT,
 } OperatorCode;
 
@@ -55,18 +67,23 @@ typedef struct KVConnect
 } DbConnectT;
 
 typedef struct UsrResultBase {
-    int ret;
+    uint32_t ret;
 } UsrResultBaseT;
 
 typedef struct UsrResultCalc {
-    int ret;
-    int calcAns;
+    uint32_t ret;
+    uint32_t calcAns;
 } UsrResultCalcT;
 
 
 // ************************************
 // SIMPLERELATION 相关类型定义 start
 // ************************************
+
+typedef struct UsrResultCreateDb {
+    uint32_t ret;
+    uint32_t dbId;
+} UsrResultCreateDbT;
 
 typedef enum SrLabelFiledType
 {

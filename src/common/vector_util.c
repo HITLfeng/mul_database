@@ -5,7 +5,7 @@
 // 单次扩容步长
 // #define DB_VECTOR_EXTEND_STEP 5
 
-void DbVectorInit(DbVectorT *vector, uint32_t itemSize)
+Status DbVectorInit(DbVectorT *vector, uint32_t itemSize)
 {
     DB_POINT(vector);
     memset(vector, 0x00, sizeof(DbVectorT));
@@ -14,7 +14,11 @@ void DbVectorInit(DbVectorT *vector, uint32_t itemSize)
     vector->itemSize = itemSize;
     uint32_t initAllocSize = vector->capacity * itemSize * DB_VECTOR_INIT_CAPACITY;
     vector->data = malloc(initAllocSize);
-    DB_ASSERT(vector->data != NULL);
+    if (vector->data == NULL) {
+        log_error("malloc error when DbVectorInit. alloc size is %u.", initAllocSize);
+        return GMERR_MEMORY_ALLOC_FAILED;
+    }
+    return GMERR_OK;
 }
 
 Status DbVectorAppendItem(DbVectorT *vector, void *item)

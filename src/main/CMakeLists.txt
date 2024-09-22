@@ -29,5 +29,5 @@ set(EXECUTABLE_OUTPUT_PATH ${BIN_PATH})
 
 add_executable(kvserver server_main.c)
 
-target_link_libraries(kvserver pthread kvcommon kvruntime)
+target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel)
 # target_link_libraries(kvserver pthread kvcommon kvinterface kvruntime kvstorage)
