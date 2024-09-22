@@ -2,7 +2,7 @@
 
 Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx)
 {
-    if (execCtx->dbName == NULL || strcmp(execCtx->dbName, ""))
+    if (execCtx->dbName == NULL || strcmp(execCtx->dbName, "") == 0)
     {
         log_error("SrCheckCreateDbArgs: dbName is null");
         return GMERR_DATAMODEL_SRDB_NAME_NULL;

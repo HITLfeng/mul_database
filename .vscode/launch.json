@@ -5,8 +5,8 @@
             "name": "启动服务端",
             "type": "cppdbg",
             "request": "attach",
-            "program": "/root/project/all2023/kv-database/output/bin/kvserver",
-            "cwd": "/root/project/all2023/kv-database/output/bin/",
+            "program": "/root/db/mul_database/output/bin/kvserver",
+            "cwd": "/root/db/mul_database/output/bin/",
             "MIMode": "gdb",
             "miDebuggerPath": "/usr/bin/gdb",
             "setupCommands": [

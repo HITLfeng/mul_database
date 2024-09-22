@@ -40,6 +40,8 @@ char DeseriChar(uint8_t **bufCursor);
 
 int32_t DeseriInt(uint8_t **bufCursor);
 
+void DeseriString(uint8_t **bufCursor, char *value);
+
 #ifdef __cplusplus
 }
 #endif

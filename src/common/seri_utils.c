@@ -48,10 +48,6 @@ void DeseriStringM(uint8_t **bufCursor, char *value)
     *bufCursor += strLen;
 }
 
-
-
-
-
 // ******************************************************
 // 不移动位置
 // ******************************************************
@@ -78,4 +74,13 @@ int32_t DeseriInt(uint8_t **bufCursor)
 {
     int32_t value = *((int32_t *)(*bufCursor));
     return value;
+}
+
+void DeseriString(uint8_t **bufCursor, char *value)
+{
+    uint8_t **tmpBufCursor = bufCursor;
+    uint32_t strLen = *((uint32_t *)(*tmpBufCursor));
+    *tmpBufCursor += sizeof(uint32_t);
+    memcpy(value, *tmpBufCursor, strLen);
+    // *tmpBufCursor += strLen;
 }

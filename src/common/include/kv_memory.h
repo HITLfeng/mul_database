@@ -15,15 +15,15 @@ extern "C" {
 // 配置内存池page和block大小
 #define MEM_PAGE_SIZE 4096
 
-#define MEM_BLOCK_SIZE_LEVEL1 4
-#define MEM_BLOCK_SIZE_LEVEL2 8
-#define MEM_BLOCK_SIZE_LEVEL3 16
-#define MEM_BLOCK_SIZE_LEVEL4 32
-#define MEM_BLOCK_SIZE_LEVEL5 64
-#define MEM_BLOCK_SIZE_LEVEL6 128
-#define MEM_BLOCK_SIZE_LEVEL7 256
-#define MEM_BLOCK_SIZE_LEVEL8 512
-#define MEM_BLOCK_SIZE_LEVEL9 1024
+#define MEM_BLOCK_SIZE_LEVEL1 8
+#define MEM_BLOCK_SIZE_LEVEL2 16
+#define MEM_BLOCK_SIZE_LEVEL3 32
+#define MEM_BLOCK_SIZE_LEVEL4 64
+#define MEM_BLOCK_SIZE_LEVEL5 128
+#define MEM_BLOCK_SIZE_LEVEL6 256
+#define MEM_BLOCK_SIZE_LEVEL7 512
+#define MEM_BLOCK_SIZE_LEVEL8 1024
+#define MEM_BLOCK_SIZE_LEVEL9 2048
 // 层级：4，8，16，32，64，128，256，512，1024
 #define MEM_POOL_SLOT_CNT 9
 
@@ -44,7 +44,7 @@ typedef struct KVMemoryPool
 typedef struct KVMemoryPoolManager
 {
     // 层级：4，8，16，32，64，128，256，512，1024
-    KVMemoryPoolT *memoryMangerPool[MEM_POOL_SLOT_CNT];
+    KVMemoryPoolT memoryMangerPool[MEM_POOL_SLOT_CNT];
 } KVMemoryPoolManagerT;
 
 

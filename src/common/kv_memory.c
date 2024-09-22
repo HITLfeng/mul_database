@@ -4,8 +4,8 @@ KVMemoryPoolManagerT *g_kvMemoryPoolManager;
 
 bool IsAllocByMemoryPool(void *ptr)
 {
-    if ((uint8_t *)(g_kvMemoryPoolManager->memoryMangerPool[0]->memPtr) <= (uint8_t *)ptr &&
-        (uint8_t *)ptr < (uint8_t *)(g_kvMemoryPoolManager->memoryMangerPool[0]->memPtr) +
+    if ((uint8_t *)(g_kvMemoryPoolManager->memoryMangerPool[0].memPtr) <= (uint8_t *)ptr &&
+        (uint8_t *)ptr < (uint8_t *)(g_kvMemoryPoolManager->memoryMangerPool[0].memPtr) +
                              MEM_POOL_SLOT_CNT * MEM_PAGE_SIZE)
     {
         return true;
@@ -96,7 +96,7 @@ void *GetMemPoolBySize(uint32_t allocSize)
     {
         return NULL;
     }
-    return g_kvMemoryPoolManager->memoryMangerPool[slotId];
+    return &g_kvMemoryPoolManager->memoryMangerPool[slotId];
 }
 
 Status KVMemoryPoolInit()
@@ -111,10 +111,10 @@ Status KVMemoryPoolInit()
             "malloc memoryPoolManager memory failed when exec KVMemoryPoolInit.");
         return GMERR_MEMORY_ALLOC_FAILED;
     }
+    memset(g_kvMemoryPoolManager, 0, sizeof(KVMemoryPoolManagerT));
 
     // 预计初始化36M内存资源池
-    KVMemoryPoolT *memPtrArray =
-        (KVMemoryPoolT *)malloc(MEM_PAGE_SIZE * MEM_POOL_SLOT_CNT);
+    void *memPtrArray = malloc(MEM_PAGE_SIZE * MEM_POOL_SLOT_CNT);
     if (memPtrArray == NULL)
     {
         log_error("malloc memoryPool memory failed when exec KVMemoryPoolInit.");
@@ -122,13 +122,18 @@ Status KVMemoryPoolInit()
     }
     memset(memPtrArray, 0, MEM_PAGE_SIZE);
 
+    // 初始化数组
     for (uint32_t i = 0; i < MEM_POOL_SLOT_CNT; i++)
     {
-        memPtrArray[i].memPtr = memPtrArray + i;
-        memPtrArray[i].currMemPtr = memPtrArray[i].memPtr;
-        memPtrArray[i].memBlockSize = GetSlotBlockSizeByIdx(i);
-        memPtrArray[i].freeBlockCnt = MEM_PAGE_SIZE / memPtrArray[i].memBlockSize;
+        g_kvMemoryPoolManager->memoryMangerPool[i].memPtr = memPtrArray + i * MEM_PAGE_SIZE;
+        g_kvMemoryPoolManager->memoryMangerPool[i].currMemPtr = memPtrArray + i * MEM_PAGE_SIZE;
+        g_kvMemoryPoolManager->memoryMangerPool[i].memBlockSize = GetSlotBlockSizeByIdx(i);
+        g_kvMemoryPoolManager->memoryMangerPool[i].freeBlockCnt = MEM_PAGE_SIZE / (g_kvMemoryPoolManager->memoryMangerPool[i].memBlockSize);
+    }
 
+    for (uint32_t i = 0; i < MEM_POOL_SLOT_CNT; i++)
+    {
+        KVMemoryPoolT *currMemPool = &g_kvMemoryPoolManager->memoryMangerPool[i];
         // 初始 block: 使用情况如下
         // 1 2 3 4 5 6 7 ...
         // 某一刻释放了 2 5 下次申请，从几开始呢？如何管理空闲内存块
@@ -138,16 +143,16 @@ Status KVMemoryPoolInit()
         // 类型的值，这不足以存储一个指针。 而使用 *(uint8_t
         // **)(pCurList)，我们可以存储一个指向 uint8_t
         // 类型的指针，从而正确地建立空闲内存块链表。 初始化空闲内存块链表
-        uint8_t *pCurList = (uint8_t *)memPtrArray[i].memPtr;
-        for (uint32_t j = 0; j < memPtrArray[i].freeBlockCnt - 1; j++)
+        uint8_t *pCurList = (uint8_t *)currMemPool->memPtr;
+        for (uint32_t j = 0; j < currMemPool->freeBlockCnt - 1; j++)
         {
-            *(uint8_t **)(pCurList) = pCurList + memPtrArray[i].memBlockSize;
-            pCurList += memPtrArray[i].memBlockSize;
+            *(uint8_t **)(pCurList) = pCurList + currMemPool->memBlockSize;
+            pCurList += currMemPool->memBlockSize;
         }
         // 最后一个内存块的指针设置为NULL，表示链表结束
         *(uint8_t **)(pCurList) = NULL;
         log_debug("init memoryPool %d success. addr is %p", i,
-                  memPtrArray[i].memPtr);
+                  currMemPool->memPtr);
     }
 
     return GMERR_OK;
@@ -161,12 +166,11 @@ void KVMemoryPoolUninit()
     }
     for (uint32_t i = 0; i < MEM_POOL_SLOT_CNT; i++)
     {
-        free(g_kvMemoryPoolManager->memoryMangerPool[i]->memPtr);
+        free(g_kvMemoryPoolManager->memoryMangerPool[i].memPtr);
     }
     free(g_kvMemoryPoolManager);
     g_kvMemoryPoolManager = NULL;
 }
-
 
 void *KVMalloc(uint32_t allocSize)
 {
@@ -196,8 +200,8 @@ void *KVMemPoolAlloc(uint32_t allocSize)
     {
         // TODO: 拓展page？
         log_warn("no free block when exec KVMemAlloc, allocSize is %u. pool "
-                   "block size is %u.",
-                   allocSize, memoryPool->memBlockSize);
+                 "block size is %u.",
+                 allocSize, memoryPool->memBlockSize);
         return NULL;
     }
 

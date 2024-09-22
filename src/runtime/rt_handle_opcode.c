@@ -49,7 +49,7 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     SimpleRelExecCtxT execCtx = {0};
 
     // 根据opCode 解析execCtx
-    DeseriStringM((uint8_t **)&usrMsg, execCtx.dbName);
+    DeseriString((uint8_t **)&usrMsg, execCtx.dbName);
     Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
     if (ret != GMERR_OK)
     {

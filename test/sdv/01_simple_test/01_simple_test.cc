@@ -32,6 +32,7 @@ TEST_F(SimpleRelationTest, CreateDb)
 
     // 检查结果
     EXPECT_EQ(GMERR_OK, result.ret);
+    std::cout << "dbId: " << dbId << std::endl;
 
     ASSERT_EQ(GMERR_OK, KVCDisconnect(conn));
 }
