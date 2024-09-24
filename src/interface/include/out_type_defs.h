@@ -13,6 +13,7 @@ extern "C"
 
 #define SR_LABEL_MAX_FILED_CNT 30
 #define SR_DBNAME_MAX_LENGTH 128
+#define SR_LABELNAME_MAX_LENGTH 128
 
 
 typedef enum OperatorCode

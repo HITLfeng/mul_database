@@ -52,7 +52,10 @@
         "common.h": "c",
         "kv_memory.h": "c",
         "out_type_defs.h": "c",
-        "spr_common.h": "c"
+        "spr_common.h": "c",
+        "test_common.h": "c",
+        "gtest.h": "c",
+        "jansson.h": "c"
     },
     "editor.tokenColorCustomizations": {
         "comments": "#00fc00",

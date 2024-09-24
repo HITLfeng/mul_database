@@ -39,9 +39,15 @@ uint32_t GenSrTableId(void);
 SrDbCtrlManagerT *GetDbCtrlManager(void);
 bool IsDbNameExist(const char *dbName);
 Status RemoveDbCtrlByName(const char *dbName);
+SrDbCtrlT * DmGetDbCtrlByName(const char *dbName);
 
-void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
+// void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
 void DmClearAllLabels(const char *dbName);
+
+Status SrDmCreateDb(SimpleRelExecCtxT *execCtx);
+Status SrDmDropDb(SimpleRelExecCtxT *execCtx);
+Status SrDmCreateTable(SimpleRelExecCtxT *execCtx);
+Status SrDmInsertData(SimpleRelExecCtxT *execCtx);
 
 
 #endif // __SPR_COMMON_H__

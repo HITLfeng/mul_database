@@ -28,8 +28,8 @@ file(GLOB SRC_LIST ${CMAKE_CURRENT_SOURCE_DIR}/*.cc)
 file(GLOB_RECURSE SOURCES "sdv/0*/*.cc")
 # file(GLOB_RECURSE SOURCES "sdv/01_simple_test/*.cc")
 
+find_library(JANSSON_LIBRARY NAMES jansson libjansson)
+add_executable(kv-test main.cc ${SRC_LIST} ${SOURCES} test_common.cc)
 
-add_executable(kv-test main.cc ${SRC_LIST} ${SOURCES})
-
-target_link_libraries(kv-test gtest pthread kvclient kvcommon)
+target_link_libraries(kv-test gtest pthread kvclient kvcommon ${JANSSON_LIBRARY})
 # 执行 cmake + 路径 （CMakeLists.txt 文件所在路径）

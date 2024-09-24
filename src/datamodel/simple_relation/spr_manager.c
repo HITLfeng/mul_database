@@ -66,7 +66,7 @@ bool IsDbNameExist(const char *dbName)
     return false;
 }
 
-Status DmGetDbCtrlByName(const char *dbName)
+SrDbCtrlT * DmGetDbCtrlByName(const char *dbName)
 {
     DB_POINT2(g_srDbCtrlManager, dbName);
     for (uint32_t i = 0; i < DbVectorGetSize(&g_srDbCtrlManager->dbCtrlList); i++)

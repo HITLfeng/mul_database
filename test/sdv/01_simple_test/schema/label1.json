@@ -1,0 +1,17 @@
+{
+    "labelName": "label_test1",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string"
+        },
+        {
+            "name": "age",
+            "type": "uint32"
+        },
+        {
+            "name": "hobby",
+            "type": "string"
+        }
+    ]
+}

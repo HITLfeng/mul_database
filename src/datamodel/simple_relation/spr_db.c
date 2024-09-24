@@ -1,17 +1,17 @@
 #include "include/spr_common.h"
 
-void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl)
-{
-    if (dbCtrl->dbName != NULL)
-    {
-        KVMemFree(dbCtrl->dbName, strlen(dbCtrl->dbName) + 1);
-    }
-    // TODO:
-    DmClearAllLabels(dbCtrl);
-    DbVectorDestroy(&dbCtrl->labelCtrlList);
-    dbCtrl->dbId = 0;
-    dbCtrl->dbName = NULL;
-}
+// void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl)
+// {
+//     if (dbCtrl->dbName != NULL)
+//     {
+//         KVMemFree(dbCtrl->dbName, strlen(dbCtrl->dbName) + 1);
+//     }
+//     // TODO:
+//     DmClearAllLabels(dbCtrl);
+//     DbVectorDestroy(&dbCtrl->labelCtrlList);
+//     dbCtrl->dbId = 0;
+//     dbCtrl->dbName = NULL;
+// }
 
 Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx)
 {
@@ -68,7 +68,7 @@ Status SrDmDropDb(SimpleRelExecCtxT *execCtx)
     }
     if (!IsDbNameExist(execCtx->dbName))
     {
-        warn_error("SrDmDropDb: dbName is not exist.");
+        log_warn("SrDmDropDb: dbName is not exist.");
         return GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED;
     }
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByName(execCtx->dbName);
@@ -76,6 +76,6 @@ Status SrDmDropDb(SimpleRelExecCtxT *execCtx)
         log_error("SrDmDropDb: DmGetDbCtrlByName failed.");
         return GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL;
     }
-    DmClearSingleDbCtrl(dbCtrl);
+    // DmClearSingleDbCtrl(dbCtrl);
     return RemoveDbCtrlByName(execCtx->dbName);
 }

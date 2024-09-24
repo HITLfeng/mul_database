@@ -16,8 +16,12 @@ file(GLOB UTILS_LIB ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 # file(GLOB UTILS_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+# include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+find_library(JANSSON_LIBRARY NAMES jansson libjansson)
 
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
 
-add_library(kvcommon SHARED ${UTILS_LIB})
+# message("JANSSON_LIBRARY: ${JANSSON_LIBRARY}")
+add_library(kvcommon SHARED ${UTILS_LIB} ${JANSSON_LIBRARY})

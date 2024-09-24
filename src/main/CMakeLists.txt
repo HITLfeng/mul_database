@@ -26,8 +26,13 @@ message(STATUS "include path: ${RUNTIME_PATH}/include")
 set(EXECUTABLE_OUTPUT_PATH ${BIN_PATH})
 # add_library(kvcommon SHARED ${UTILS_LIB})
 
+find_library(JANSSON_LIBRARY NAMES jansson libjansson)
 
+# 设置动态库生成路径
+set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
+
+# message("JANSSON_LIBRARY: ${JANSSON_LIBRARY}")
 add_executable(kvserver server_main.c)
 
-target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel)
+target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel ${JANSSON_LIBRARY})
 # target_link_libraries(kvserver pthread kvcommon kvinterface kvruntime kvstorage)
