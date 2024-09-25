@@ -11,6 +11,7 @@ extern "C"
 #endif
 
 
+#define SR_FIELD_NAME_MAX_LENGTH 64
 #define SR_LABEL_MAX_FILED_CNT 30
 #define SR_DBNAME_MAX_LENGTH 128
 #define SR_LABELNAME_MAX_LENGTH 128
@@ -88,7 +89,8 @@ typedef struct UsrResultCreateDb {
 
 typedef enum SrLabelFiledType
 {
-    SR_LABEL_FILED_TYPE_INT = 0,
+    SR_LABEL_FILED_TYPE_INT32 = 0,
+    SR_LABEL_FILED_TYPE_UINT32 = 0,
     // SR_LABEL_FILED_TYPE_FLOAT,
     SR_LABEL_FILED_TYPE_STRING,
     SR_LABEL_FILED_TYPE_BUTT,
@@ -99,6 +101,8 @@ typedef struct SrDbCreateLabelCtx {
     uint32_t fieldCnt; // feild 个数
     SrLabelFiledTypeT fieldType[SR_LABEL_MAX_FILED_CNT]; // 属性类型数组
 } SrDbCreateLabelCtxT;
+
+
 
 // ************************************
 // SIMPLERELATION 相关类型定义 end

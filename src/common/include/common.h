@@ -35,7 +35,7 @@ extern "C" {
 // 规格约束
 #define SR_DB_NAME_MAX_LENGTH 128
 
-
+#define STRLEN(str) (strlen(str) + 1)
 /*
  * error no
  */
@@ -48,6 +48,8 @@ typedef uint32_t Status;
 #define GMERR_SOCKET_FAILED 1000001
 #define GMERR_MEMORY_ALLOC_FAILED 1000002
 #define GMERR_KV_MEMORY_ALLOC_FAILED 1000003
+
+#define GMERR_KV_NOT_SUPPORT 1000999
 
 // 第三方库出错
 #define GMERR_JSON_LIB_ERROR 1000004
@@ -84,6 +86,9 @@ typedef uint32_t Status;
 #define GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL 4001005
  
 #define GMERR_DATAMODEL_SRLABEL_NAME_EXISTED 4001006
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_NULL 4001007
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_INVAILD 4001008
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_FIELDS_OUTRANGE 4001009
 
 /*
  * 断言非空函数
@@ -111,8 +116,10 @@ inline static void DB_POINT3(const void *pointer1, const void *pointer2, const v
 // simple rel 相关传递机构体
 typedef struct SimpleRelExecCtx
 {
+    OperatorCode opCode;
     char dbName[SR_DB_NAME_MAX_LENGTH];
     char labelName[SR_DB_NAME_MAX_LENGTH];
+    const char *labelJson;
     uint32_t dbId;
     uint32_t labelId;
     uint32_t fieldCnt;

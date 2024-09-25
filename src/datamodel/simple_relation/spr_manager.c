@@ -39,6 +39,12 @@ SrDbCtrlManagerT *GetDbCtrlManager(void)
     return g_srDbCtrlManager;
 }
 
+bool IsLabelNameExist(const char *dbName, const char *labelName)
+{
+    DB_POINT2(dbName, labelName);
+    return false;
+}
+
 bool IsDbNameExist(const char *dbName)
 {
     SrDbCtrlManagerT *dbCtrlManager = GetDbCtrlManager();

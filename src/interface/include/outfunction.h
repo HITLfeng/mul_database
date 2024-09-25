@@ -48,7 +48,9 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId);
 CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName);
 
 // 创建 关系表
-CliStatus SRCCreateLabel(DbConnectT *conn, const char *labelName, SrDbCreateLabelCtxT *createLabelCtx);
+CliStatus SRCCreateLabelWithJson(DbConnectT *conn, const char *labelJson);
+// 暂时不支持
+// CliStatus SRCCreateLabel(DbConnectT *conn, const char *labelName, SrDbCreateLabelCtxT *createLabelCtx);
 
 // 删除 关系表
 CliStatus SRCDeleteLabel(DbConnectT *conn, const char *labelName);

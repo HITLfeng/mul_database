@@ -9,9 +9,9 @@
 
 #include "include/client_common.h"
 
-void SetSRCreateOrDropDbUsrMsgBuf(char *usrMsgBuf, const char *dbName)
+void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf)
 {
-    SeriStringM(&usrMsgBuf, dbName);
+    SeriStringM(&usrMsgBuf, buf);
 }
 
 void CltParseBaseMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result)
@@ -43,7 +43,7 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId)
     msgBuf.requestBufLen = BUF_SIZE;
 
     // len/dbname
-    SetSRCreateOrDropDbUsrMsgBuf(msgBuf.requestMsg, dbName);
+    SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, dbName);
 
     CliStatus ret = KVCSend(conn, &msgBuf);
     if (ret != GMERR_OK)
@@ -89,14 +89,14 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
     msgBuf.requestBufLen = BUF_SIZE;
 
     // len/dbname
-    SetSRCreateOrDropDbUsrMsgBuf(msgBuf.requestMsg, dbName);
+    SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, dbName);
 
     CliStatus ret = KVCSend(conn, &msgBuf);
     if (ret != GMERR_OK)
     {
         return ret;
     }
-    normal_info("send calc request succ SRCDeleteDb.");
+    normal_info("send SRCDeleteDb request succ SRCDeleteDb.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -105,7 +105,7 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
     {
         return ret;
     }
-    normal_info("recv calc result succ SRCDeleteDb.");
+    normal_info("recv SRCDeleteDb result succ SRCDeleteDb.");
     // 解析服务器返回的消息
     UsrResultBaseT result = {0};
     CltParseBaseMsgBuf(&respBuf, &result);
@@ -114,6 +114,46 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
         log_error("drop db fail, ret is %u.", result.ret);
         return ret;
     }
-    normal_info("parse calc result succ");
+    normal_info("parse SRCDeleteDb result succ");
+    return GMERR_OK;
+}
+
+CliStatus SRCCreateLabelWithJson(DbConnectT *conn, const char *labelJson)
+{
+    DB_POINT2(conn, labelJson);
+    OperatorCode opCode = OP_SIMREL_CREATE_TABLE;
+
+    // 申请栈内存
+    MsgBufRequestT msgBuf = {0};
+    msgBuf.opCode = opCode;
+    msgBuf.requestBufLen = BUF_SIZE;
+
+    // len/dbname
+    SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, labelJson);
+
+    CliStatus ret = KVCSend(conn, &msgBuf);
+    if (ret != GMERR_OK)
+    {
+        return ret;
+    }
+    normal_info("send SRCCreateLabelWithJson request succ SRCDeleteDb.");
+
+    // 读取服务器返回的消息
+    MsgBufResponseT respBuf = {0};
+    ret = KVCRecv(conn, &respBuf);
+    if (ret != GMERR_OK)
+    {
+        return ret;
+    }
+    normal_info("recv SRCCreateLabelWithJson result succ SRCDeleteDb.");
+    // 解析服务器返回的消息
+    UsrResultBaseT result = {0};
+    CltParseBaseMsgBuf(&respBuf, &result);
+    if (result.ret != GMERR_OK)
+    {
+        log_error("SRCCreateLabelWithJson fail, ret is %u.", result.ret);
+        return ret;
+    }
+    normal_info("parse SRCCreateLabelWithJson result succ");
     return GMERR_OK;
 }

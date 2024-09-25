@@ -39,6 +39,65 @@ bool IsSimpleRelOpCode(OperatorCode opCode) {
     return opCode >= OP_SIMREL_CREATE_DB && opCode <= OP_SIMREL_QUERY_DATA;
 }
 
+void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx)
+{
+    switch (opCode)
+    {
+    case OP_SIMREL_CREATE_DB:
+        execCtx->opCode = OP_SIMREL_CREATE_DB;
+        DeseriString((uint8_t **)&usrMsg, execCtx->dbName);
+        break;
+    case OP_SIMREL_DROP_DB:
+        execCtx->opCode = OP_SIMREL_DROP_DB;
+        DeseriString((uint8_t **)&usrMsg, execCtx->dbName);
+        break;
+    case OP_SIMREL_CREATE_TABLE:
+        // 填充 labelJson
+        execCtx->opCode = OP_SIMREL_CREATE_TABLE;
+        DeseriString((uint8_t **)&usrMsg, execCtx->labelJson);
+        break;
+    case OP_SIMREL_DROP_TABLE:
+        execCtx->opCode = OP_SIMREL_DROP_TABLE;
+        break;
+    case OP_SIMREL_INSERT_DATA:
+        execCtx->opCode = OP_SIMREL_INSERT_DATA;
+        break;
+    case OP_SIMREL_DELETE_DATA:
+        execCtx->opCode = OP_SIMREL_DELETE_DATA;
+        break;
+    case OP_SIMREL_QUERY_DATA:
+        execCtx->opCode = OP_SIMREL_QUERY_DATA;
+        break;
+    default:
+        break;
+    }
+}
+
+void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExecCtxT *execCtx)
+{
+    switch (opCode)
+    {
+    case OP_SIMREL_CREATE_DB:
+        SeriInt((uint8_t **)&resultBuf, execCtx->dbId);
+        break;
+    case OP_SIMREL_DROP_DB:
+        break;
+    case OP_SIMREL_CREATE_TABLE:
+        // 填充 labelJson
+        break;
+    case OP_SIMREL_DROP_TABLE:
+        break;
+    case OP_SIMREL_INSERT_DATA:
+        break;
+    case OP_SIMREL_DELETE_DATA:
+        break;
+    case OP_SIMREL_QUERY_DATA:
+        break;
+    default:
+        break;
+    }
+}
+
 Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen)
 {
     if (!IsSimpleRelOpCode(opCode))
@@ -49,7 +108,7 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     SimpleRelExecCtxT execCtx = {0};
 
     // 根据opCode 解析execCtx
-    DeseriString((uint8_t **)&usrMsg, execCtx.dbName);
+    RtSRInitExecCtxByOpCode(opCode, usrMsg, &execCtx);
     Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
     if (ret != GMERR_OK)
     {
@@ -57,7 +116,7 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
         return ret;
     }
     // 根据opCode 填写返回结果
-    SeriInt((uint8_t **)&resultBuf, execCtx.dbId);
+    RtSRSetResultBufByOpCode(opCode, resultBuf, &execCtx);
     return GMERR_OK;
 }
 

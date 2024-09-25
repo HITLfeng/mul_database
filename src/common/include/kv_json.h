@@ -67,8 +67,24 @@ Status KVJSONToString(const json_t *root, char **json_text);
 // 根据root获取其中字段
 Status KVJsonGetObject(const json_t *root, const char *key, json_t **value);
 
-// 解析字符串类型json
+// 解析字符串类型json 无需手动释放内存，要长期使用请自己申请一块内存然后copy
 Status KVJsonParseStringObj(const json_t *root, const char **value);
+
+// 外部传入一块已分配好的内存进去，内部帮忙copy
+Status KVJsonParseStringObjToBuf(const json_t *root, const char *valueBuf, uint32_t valueMaxLen);
+
+Status KVJsonArrayGetItem(const json_t *root, uint32_t index, json_t **value);
+
+bool KVJsonIsArray(const json_t *root);
+bool KVJsonIsInterger(const json_t *root);
+
+uint32_t KVJsonGetArraySize(const json_t *root);
+
+// 解析int类型
+
+Status KVJsonParseIntObj(const json_t *root, int32_t *value)
+
+
 
 #ifdef __cplusplus
 }

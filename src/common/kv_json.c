@@ -42,6 +42,59 @@ Status KVJsonParseStringObj(const json_t *root, const char **value)
     return GMERR_OK;
 }
 
+Status KVJsonParseStringObjToBuf(const json_t *root, const char *valueBuf, uint32_t valueMaxLen)
+{
+    char *value = json_string_value(root);
+    if (value == NULL)
+    {
+        return GMERR_JSON_LIB_ERROR;
+    }
+    uint32_t valueLen = STRLEN(value);
+    if (valueLen >= valueMaxLen)
+    {
+        log_error("Value is too long, valueLen is %u and valueMaxLen is %u.", valueLen, valueMaxLen);
+        return GMERR_JSON_LIB_ERROR;
+    }
+    memcpy(valueBuf, value, valueLen);
+    return GMERR_OK;
+}
+
+bool KVJsonIsArray(const json_t *root)
+{
+    return json_is_array(root);
+}
+
+bool KVJsonIsInterger(const json_t *root)
+{
+    return json_is_integer(root);
+}
+
+uint32_t KVJsonGetArraySize(const json_t *root)
+{
+    return json_array_size(root);
+}
+
+Status KVJsonArrayGetItem(const json_t *root, uint32_t index, json_t **value)
+{
+    *value = json_array_get(root, index);
+    if (*value == NULL)
+    {
+        return GMERR_JSON_LIB_ERROR;
+    }
+    return GMERR_OK;
+}
+
+Status KVJsonParseIntObj(const json_t *root, int32_t *value)
+{
+    *value = json_integer_value(root);
+    if (*value == NULL)
+    {
+        return GMERR_JSON_LIB_ERROR;
+    }
+    return GMERR_OK;
+}
+
+
 // 解析JSON字符串
 // const char *json_text = "{\"name\": \"Bob\", \"age\": 25}";
 // json_t *root = json_loads(json_text, 0, NULL);

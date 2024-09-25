@@ -9,7 +9,7 @@ Status DmProcessSimpleRelOpCode(OperatorCode opCode, SimpleRelExecCtxT *execCtx)
     case OP_SIMREL_DROP_DB:
         return SrDmDropDb(execCtx);
     case OP_SIMREL_CREATE_TABLE:
-        // return SrDmCreateTable(execCtx);
+        return SrDmCreateTable(execCtx);
     case OP_SIMREL_DROP_TABLE:
         break;
     case OP_SIMREL_INSERT_DATA:
