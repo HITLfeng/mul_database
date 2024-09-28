@@ -27,7 +27,7 @@ CliStatus KVCSrvStart(void)
     pthread_t thread;
     if (pthread_create(&thread, NULL, srvStartDetach, NULL) != 0)
     {
-        error_info("server start thread create error.");
+        log_error("server start thread create error.");
         return GMERR_CLIENT_START_SERVER_FAILED;
     }
     pthread_detach(thread);
@@ -50,7 +50,7 @@ CliStatus KVCConnect(DbConnectT *conn)
     sock = socket(PF_INET, SOCK_STREAM, 0);
     if (sock == -1)
     {
-        error_info("client socket error.");
+        log_error("client socket error.");
         return GMERR_CLIENT_CONNECT_FAILED;
     }
 
@@ -63,11 +63,11 @@ CliStatus KVCConnect(DbConnectT *conn)
     // 连接服务器
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
-        error_info("client connect error.");
+        log_error("client connect error.");
         return GMERR_CLIENT_CONNECT_FAILED;
     }
     conn->socketFd = sock;
-    normal_info("client connect success.");
+    log_info("client connect success.");
     return GMERR_OK;
 }
 
@@ -84,7 +84,7 @@ CliStatus KVCSend(DbConnectT *conn, const MsgBufRequestT *msgBuf)
     int sendRet = write(conn->socketFd, (const void *)msgBuf, sizeof(MsgBufRequestT));
     if (sendRet == -1)
     {
-        error_info("client send msgBuf error.");
+        log_error("client send msgBuf error.");
         return GMERR_CLIENT_SEND_FAILED;
     }
     return GMERR_OK;
@@ -97,7 +97,7 @@ CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf)
     int recvLen = read(conn->socketFd, &message, sizeof(MsgBufResponseT));
     if (recvLen == -1)
     {
-        error_info("client recv msgBuf error.");
+        log_error("client recv msgBuf error.");
         return GMERR_CLIENT_RECV_FAILED;
     }
     // message[recvLen] = 0;

@@ -30,7 +30,7 @@ void RTProcessMain(char *message, uint32_t str_len)
     if (msg_head->opCode >= OP_BUTT)
     {
         // 未知的opCode
-        error_info("parse request msg buffer failed. unknown opCode. type: %d", msg_head->opCode);
+        log_error("parse request msg buffer failed. unknown opCode. type: %d", msg_head->opCode);
         ret = GMERR_RUNTIME_UNKNOWN_OPCODE;
         RTSetRequestHead(message, ret, NULL, 0);
         return;
@@ -39,7 +39,7 @@ void RTProcessMain(char *message, uint32_t str_len)
     uint8_t *reslutBuf = (uint8_t *)malloc(BUF_SIZE);
     if (reslutBuf == NULL)
     {
-        error_info("parse request msg buffer failed. malloc failed.");
+        log_error("parse request msg buffer failed. malloc failed.");
         ret = GMERR_MEMORY_ALLOC_FAILED;
         RTSetRequestHead(message, ret, NULL, 0);
         return;

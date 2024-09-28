@@ -3,15 +3,18 @@
     "fields": [
         {
             "name": "name",
-            "type": "string"
+            "type": "string",
+            "size": 19
         },
         {
             "name": "age",
-            "type": "uint32"
+            "type": "uint32",
+            "size": 4
         },
         {
             "name": "hobby",
-            "type": "string"
+            "type": "string",
+            "size": 17
         }
     ]
 }

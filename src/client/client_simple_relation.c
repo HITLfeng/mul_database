@@ -60,7 +60,7 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId)
     {
         return ret;
     }
-    normal_info("send calc request succ SRCCreateDb.");
+    log_info("send calc request succ SRCCreateDb.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -69,7 +69,7 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId)
     {
         return ret;
     }
-    normal_info("recv calc result succ SRCCreateDb.");
+    log_info("recv calc result succ SRCCreateDb.");
     // 解析服务器返回的消息
     UsrResultCreateDbT createDbRes = {0};
     UsrResultBaseT *result = (UsrResultBaseT *)&createDbRes;
@@ -83,7 +83,7 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId)
         log_error("create db fail, ret is %u.", createDbRes.ret);
         return ret;
     }
-    normal_info("parse calc result succ");
+    log_info("parse calc result succ");
     *dbId = createDbRes.dbId;
     return GMERR_OK;
 }
@@ -106,7 +106,7 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
     {
         return ret;
     }
-    normal_info("send SRCDeleteDb request succ SRCDeleteDb.");
+    log_info("send SRCDeleteDb request succ SRCDeleteDb.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -115,7 +115,7 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
     {
         return ret;
     }
-    normal_info("recv SRCDeleteDb result succ SRCDeleteDb.");
+    log_info("recv SRCDeleteDb result succ SRCDeleteDb.");
     // 解析服务器返回的消息
     UsrResultBaseT result = {0};
     CltParseBaseMsgBuf(&respBuf, &result);
@@ -124,7 +124,7 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
         log_error("drop db fail, ret is %u.", result.ret);
         return ret;
     }
-    normal_info("parse SRCDeleteDb result succ");
+    log_info("parse SRCDeleteDb result succ");
     return GMERR_OK;
 }
 
@@ -146,7 +146,7 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
     {
         return ret;
     }
-    normal_info("send SRCCreateLabelWithJson request succ SRCDeleteDb.");
+    log_info("send SRCCreateLabelWithJson request succ.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -155,7 +155,7 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
     {
         return ret;
     }
-    normal_info("recv SRCCreateLabelWithJson result succ SRCDeleteDb.");
+    log_info("recv SRCCreateLabelWithJson result succ.");
     // 解析服务器返回的消息
     UsrResultBaseT result = {0};
     CltParseBaseMsgBuf(&respBuf, &result);
@@ -164,6 +164,6 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
         log_error("SRCCreateLabelWithJson fail, ret is %u.", result.ret);
         return ret;
     }
-    normal_info("parse SRCCreateLabelWithJson result succ");
+    log_info("parse SRCCreateLabelWithJson result succ");
     return GMERR_OK;
 }

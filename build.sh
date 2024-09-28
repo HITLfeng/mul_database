@@ -1,7 +1,16 @@
 #！/bin/bash
 source /opt/rh/devtoolset-8/enable
 
-source ./scripts/env.sh
+# source ./scripts/env.sh
+
+function messageShow() {
+    echo "======================================"
+    echo "cd test"
+    echo "======================================"
+    echo "./kv-test --gtest_color=yes --gtest_filter=SimpleRelationJsonTest.*"
+    echo "======================================"
+}
+
 
 case "$1" in
     clean)
@@ -19,6 +28,7 @@ case "$1" in
         mkdir -p ./output/include
         cp ./src/interface/include/* ./output/include/
         source ./innerbuild.sh
+        messageShow
         ;;
 esac
 

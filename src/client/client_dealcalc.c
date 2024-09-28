@@ -45,7 +45,7 @@ CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrR
     if (ret != GMERR_OK) {
         return ret;
     }
-    normal_info("send calc request succ KVCCalcTwoNumber.");
+    log_info("send calc request succ KVCCalcTwoNumber.");
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -53,13 +53,13 @@ CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrR
     if (ret != GMERR_OK) {
         return ret;
     }
-    normal_info("recv calc result succ KVCCalcTwoNumber.");
+    log_info("recv calc result succ KVCCalcTwoNumber.");
     // 解析服务器返回的消息
     ret = CltParseCalcMsgBuf(&respBuf, result);
     if (ret != GMERR_OK) {
         return ret;
     }
-    normal_info("parse calc result succ");
+    log_info("parse calc result succ");
 
     return GMERR_OK;
 }

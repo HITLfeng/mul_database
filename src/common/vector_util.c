@@ -27,11 +27,11 @@ Status DbVectorAppendItem(DbVectorT *vector, void *item)
     if (vector->size >= vector->capacity)
     {
         uint32_t newAllocSize = vector->capacity * vector->itemSize * 2;
-        normal_info("vector capacity extend from %u to %u.", vector->capacity, vector->capacity * 2);
+        log_info("vector capacity extend from %u to %u.", vector->capacity, vector->capacity * 2);
         vector->data = realloc(vector->data, newAllocSize);
         if (vector->data == NULL)
         {
-            error_info("realloc data memory error. alloc size is %u.", newAllocSize);
+            log_error("realloc data memory error. alloc size is %u.", newAllocSize);
             return GMERR_MEMORY_ALLOC_FAILED;
         }
         vector->capacity *= 2;
@@ -46,7 +46,7 @@ void *DbVectorGetItem(DbVectorT *vector, uint32_t index)
     DB_POINT(vector);
     if (index >= vector->size)
     {
-        error_info("DbVectorGetItem: index %u is out of range. vector size is %u.", index, vector->size);
+        log_error("DbVectorGetItem: index %u is out of range. vector size is %u.", index, vector->size);
         return NULL;
     }
     return (char *)vector->data + index * vector->itemSize;
@@ -57,7 +57,7 @@ void DbVectorRemoveItem(DbVectorT *vector, uint32_t index)
     DB_POINT(vector);
     if (index >= vector->size)
     {
-        error_info("DbVectorRemoveItem: index %u is out of range. vector size is %u.", index, vector->size);
+        log_error("DbVectorRemoveItem: index %u is out of range. vector size is %u.", index, vector->size);
         return;
     }
     if (index == vector->size - 1)

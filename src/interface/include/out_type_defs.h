@@ -16,6 +16,8 @@ extern "C"
 #define SR_LABEL_MAX_FILED_CNT 30
 #define SR_DB_NAME_MAX_LENGTH 128
 #define SR_LABEL_NAME_MAX_LENGTH 128
+// json报文最大允许长度2M
+#define SR_LABEL_JSON_MAX_LENGTH 2048
 
 
 typedef enum OperatorCode
@@ -109,7 +111,7 @@ typedef struct SimpleRelExecCtx
     OperatorCode opCode;
     char dbName[SR_DB_NAME_MAX_LENGTH];
     char labelName[SR_LABEL_NAME_MAX_LENGTH];
-    char *labelJson;
+    char labelJson[SR_LABEL_JSON_MAX_LENGTH];
     uint32_t dbId;
     uint32_t labelId;
     uint32_t fieldCnt;

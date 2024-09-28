@@ -13,25 +13,25 @@ extern "C" {
 #endif
 
 // 调试打印开关
-#define __DEBUG
+// #define __DEBUG
+/*
+// #ifdef __DEBUG
+// #define normal_info(format, ...) printf("["__FILE__                                        \
+//                                         "][Line: %d][%s]: \033[32m" format "\033[32;0m\n", \
+//                                         __LINE__, __func__, ##__VA_ARGS__)
+// #define warning_info(format, ...) printf("["__FILE__                                        \
+//                                          "][Line: %d][%s]: \033[33m" format "\033[32;0m\n", \
+//                                          __LINE__, __func__, ##__VA_ARGS__)
+// #define error_info(format, ...) printf("["__FILE__                                        \
+//                                        "][Line: %d][%s]: \033[31m" format "\033[32;0m\n", \
+//                                        __LINE__, __func__, ##__VA_ARGS__)
+// #else
+// #define normal_info(format, ...)
+// #define warn_info(format, ...)
+// #define error_info(format, ...)
+// #endif
 
-#ifdef __DEBUG
-#define normal_info(format, ...) printf("["__FILE__                                        \
-                                        "][Line: %d][%s]: \033[32m" format "\033[32;0m\n", \
-                                        __LINE__, __func__, ##__VA_ARGS__)
-#define warning_info(format, ...) printf("["__FILE__                                        \
-                                         "][Line: %d][%s]: \033[33m" format "\033[32;0m\n", \
-                                         __LINE__, __func__, ##__VA_ARGS__)
-#define error_info(format, ...) printf("["__FILE__                                        \
-                                       "][Line: %d][%s]: \033[31m" format "\033[32;0m\n", \
-                                       __LINE__, __func__, ##__VA_ARGS__)
-#else
-#define normal_info(format, ...)
-#define warn_info(format, ...)
-#define error_info(format, ...)
-#endif
-
-
+*/
 // 规格约束
 
 
@@ -77,11 +77,14 @@ typedef uint32_t Status;
 // STORAGE 模块错误码
 #define GMERR_STORAGE_MEMPOOL_INIT_FAILED 3001001
 
+// ****************************************
 // DATAMODEL 模块错误码
+// ****************************************
 #define GMERR_DATAMODEL_SRDB_NAME_NULL 4001001
 #define GMERR_DATAMODEL_SRDB_NAME_TOO_LONG 4001002
 #define GMERR_DATAMODEL_SRDB_GET_GMANGER_FAILED 4001003
 #define GMERR_DATAMODEL_SRDB_NAME_EXISTED 4001004
+// DB 名字不存在
 #define GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED 4001005
 #define GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL 4001006
 #define GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED 4001007

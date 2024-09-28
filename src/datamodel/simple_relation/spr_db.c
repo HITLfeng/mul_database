@@ -13,61 +13,61 @@
 //     dbCtrl->dbName = NULL;
 // }
 
-Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx)
-{
-    if (execCtx->dbName == NULL || strcmp(execCtx->dbName, "") == 0)
-    {
+Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx) {
+    if (execCtx->dbName == NULL || strcmp(execCtx->dbName, "") == 0) {
         log_error("SrCheckCreateDbArgs: dbName is null");
         return GMERR_DATAMODEL_SRDB_NAME_NULL;
     }
-    if (strlen(execCtx->dbName) > SR_DB_NAME_MAX_LENGTH)
-    {
+    if (strlen(execCtx->dbName) > SR_DB_NAME_MAX_LENGTH) {
         log_error("SrCheckCreateDbArgs: dbName is too long");
         return GMERR_DATAMODEL_SRDB_NAME_TOO_LONG;
     }
     return GMERR_OK;
 }
 
-Status SrDmCreateDb(SimpleRelExecCtxT *execCtx)
-{
+Status SrDmCreateDb(SimpleRelExecCtxT *execCtx) {
     Status ret = SrCheckCreateDbArgs(execCtx);
-    if (ret != GMERR_OK)
-    {
+    if (ret != GMERR_OK) {
         return ret;
     }
-    if (IsDbNameExist(execCtx->dbName))
-    {
+    if (IsDbNameExist(execCtx->dbName)) {
         log_error("SrDmCreateDb: dbName is exist.");
         return GMERR_DATAMODEL_SRDB_NAME_EXISTED;
     }
     SrDbCtrlT dbCtrl = {0};
     dbCtrl.dbName = (char *)KVMemAlloc(strlen(execCtx->dbName) + 1);
-    if (dbCtrl.dbName == NULL)
-    {
+    if (dbCtrl.dbName == NULL) {
         log_error("SrDmCreateDb: dbName alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
+    memset(dbCtrl.dbName, 0, strlen(execCtx->dbName) + 1);
+    strcpy(dbCtrl.dbName, execCtx->dbName);
     ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
-    if (ret != GMERR_OK)
-    {
+    if (ret != GMERR_OK) {
         KVMemFree(dbCtrl.dbName, sizeof(SrLabelT));
         log_error("SrDmCreateDb: DbVectorInit labelCtrlList failed.");
         return ret;
     }
     dbCtrl.dbId = GenSrDbId();
+
+    SrDbCtrlManagerT *dbCtrlMgr = GetDbCtrlManager();
+    ret = DbVectorAppendItem(&dbCtrlMgr->dbCtrlList, &dbCtrl);
+    if (ret != GMERR_OK) {
+        KVMemFree(dbCtrl.dbName, strlen(execCtx->dbName) + 1);
+        DbVectorDestroy(&dbCtrl.labelCtrlList);
+        log_error("SrDmCreateDb: DbVectorAppendItem labelCtrlList failed.");
+        return ret;
+    }
     execCtx->dbId = dbCtrl.dbId;
     return GMERR_OK;
 }
 
-Status SrDmDropDb(SimpleRelExecCtxT *execCtx)
-{
+Status SrDmDropDb(SimpleRelExecCtxT *execCtx) {
     Status ret = SrCheckCreateDbArgs(execCtx);
-    if (ret != GMERR_OK)
-    {
+    if (ret != GMERR_OK) {
         return ret;
     }
-    if (!IsDbNameExist(execCtx->dbName))
-    {
+    if (!IsDbNameExist(execCtx->dbName)) {
         log_warn("SrDmDropDb: dbName is not exist.");
         return GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED;
     }
