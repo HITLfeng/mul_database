@@ -65,5 +65,14 @@
     // "editor.wordWrap": "wordWrapColumn",
     // "editor.wordWrapColumn": 2000,
     // "C_Cpp.clang_format_style": "{ BasedOnStyle: LLVM, BreakBeforeBraces: Attach }",
-    "cmake.sourceDirectory": "/root/project/all2023/kv-database"
+    "cmake.sourceDirectory": "/root/project/all2023/kv-database",
+    
+    "C_Cpp.clang_format_fallbackStyle": "LLVM",
+    "C_Cpp.clang_format_style": "{BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach, ColumnLimit: 120, AllowShortIfStatementsOnASingleLine: true}",
+    "C_Cpp.clang_format_sortIncludes": false
+    // "C_Cpp.clang_format_fallbackStyle": "LLVM",
+    // "C_Cpp.clang_format_style": "{BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Allman}",
+    // "C_Cpp.clang_format_sortIncludes": false
+    // "C_Cpp.clang_format_style": "{BasedOnStyle: LLVM, IndentWidth: 4, BreakBeforeBraces: Attach, ColumnLimit: 120}"
 }
+

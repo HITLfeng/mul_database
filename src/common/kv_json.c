@@ -42,9 +42,9 @@ Status KVJsonParseStringObj(const json_t *root, const char **value)
     return GMERR_OK;
 }
 
-Status KVJsonParseStringObjToBuf(const json_t *root, const char *valueBuf, uint32_t valueMaxLen)
+Status KVJsonParseStringObjToBuf(const json_t *root, char *valueBuf, uint32_t valueMaxLen)
 {
-    char *value = json_string_value(root);
+    const char *value = json_string_value(root);
     if (value == NULL)
     {
         return GMERR_JSON_LIB_ERROR;
@@ -87,10 +87,6 @@ Status KVJsonArrayGetItem(const json_t *root, uint32_t index, json_t **value)
 Status KVJsonParseIntObj(const json_t *root, int32_t *value)
 {
     *value = json_integer_value(root);
-    if (*value == NULL)
-    {
-        return GMERR_JSON_LIB_ERROR;
-    }
     return GMERR_OK;
 }
 

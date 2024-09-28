@@ -10,11 +10,12 @@ extern "C"
 {
 #endif
 
-
+// SR 字段名长度
 #define SR_FIELD_NAME_MAX_LENGTH 64
+// SR 字段个数
 #define SR_LABEL_MAX_FILED_CNT 30
-#define SR_DBNAME_MAX_LENGTH 128
-#define SR_LABELNAME_MAX_LENGTH 128
+#define SR_DB_NAME_MAX_LENGTH 128
+#define SR_LABEL_NAME_MAX_LENGTH 128
 
 
 typedef enum OperatorCode
@@ -101,6 +102,19 @@ typedef struct SrDbCreateLabelCtx {
     uint32_t fieldCnt; // feild 个数
     SrLabelFiledTypeT fieldType[SR_LABEL_MAX_FILED_CNT]; // 属性类型数组
 } SrDbCreateLabelCtxT;
+
+// simple rel 相关传递机构体
+typedef struct SimpleRelExecCtx
+{
+    OperatorCode opCode;
+    char dbName[SR_DB_NAME_MAX_LENGTH];
+    char labelName[SR_LABEL_NAME_MAX_LENGTH];
+    char *labelJson;
+    uint32_t dbId;
+    uint32_t labelId;
+    uint32_t fieldCnt;
+    uint32_t *fieldType;
+} SimpleRelExecCtxT;
 
 
 

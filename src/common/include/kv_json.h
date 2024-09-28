@@ -71,7 +71,7 @@ Status KVJsonGetObject(const json_t *root, const char *key, json_t **value);
 Status KVJsonParseStringObj(const json_t *root, const char **value);
 
 // 外部传入一块已分配好的内存进去，内部帮忙copy
-Status KVJsonParseStringObjToBuf(const json_t *root, const char *valueBuf, uint32_t valueMaxLen);
+Status KVJsonParseStringObjToBuf(const json_t *root, char *valueBuf, uint32_t valueMaxLen);
 
 Status KVJsonArrayGetItem(const json_t *root, uint32_t index, json_t **value);
 
@@ -82,7 +82,7 @@ uint32_t KVJsonGetArraySize(const json_t *root);
 
 // 解析int类型
 
-Status KVJsonParseIntObj(const json_t *root, int32_t *value)
+Status KVJsonParseIntObj(const json_t *root, int32_t *value);
 
 
 

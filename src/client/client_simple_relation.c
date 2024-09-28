@@ -11,7 +11,17 @@
 
 void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf)
 {
-    SeriStringM(&usrMsgBuf, buf);
+    DB_POINT2(usrMsgBuf, buf);
+    char *bufCursor = usrMsgBuf;
+    SeriStringM(&bufCursor, buf);
+}
+
+void SetSRSetCreateTableMsgBuf(char *usrMsgBuf, uint32_t dbId, const char *buf)
+{
+    DB_POINT2(usrMsgBuf, buf);
+    char *bufCursor = usrMsgBuf;
+    SeriUint32M((uint8_t **)&bufCursor, dbId);
+    SeriStringM(&bufCursor, buf);
 }
 
 void CltParseBaseMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result)
@@ -118,7 +128,7 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName)
     return GMERR_OK;
 }
 
-CliStatus SRCCreateLabelWithJson(DbConnectT *conn, const char *labelJson)
+CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *labelJson)
 {
     DB_POINT2(conn, labelJson);
     OperatorCode opCode = OP_SIMREL_CREATE_TABLE;
@@ -129,7 +139,7 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, const char *labelJson)
     msgBuf.requestBufLen = BUF_SIZE;
 
     // len/dbname
-    SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, labelJson);
+    SetSRSetCreateTableMsgBuf(msgBuf.requestMsg, dbId, labelJson);
 
     CliStatus ret = KVCSend(conn, &msgBuf);
     if (ret != GMERR_OK)

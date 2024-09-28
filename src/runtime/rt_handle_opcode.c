@@ -1,16 +1,15 @@
 #include "main_worker.h"
 #include "seri_utils.h"
 #include "outfunction.h"
+// #include "spr_common.h"
 
-Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen)
-{
+Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     // 序列化格式 int32_t int32_t char
     uint8_t **bufCursor = (uint8_t **)&usrMsg;
     int32_t argL = DeseriIntM(bufCursor);
     int32_t argR = DeseriIntM(bufCursor);
     CalcOptionT argOp = DeseriCharM(bufCursor);
-    switch (argOp)
-    {
+    switch (argOp) {
     case CALC_ADD:
         SeriInt((uint8_t **)&resultBuf, argL + argR);
         break;
@@ -21,8 +20,7 @@ Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen)
         SeriInt((uint8_t **)&resultBuf, argL * argR);
         break;
     case CALC_DIV:
-        if (argR == 0)
-        {
+        if (argR == 0) {
             error_info("add test invaild option, option is \\ and argR is 0.");
             return GMERR_ADD_TEST_INVAILD_OPTION;
         }
@@ -39,10 +37,9 @@ bool IsSimpleRelOpCode(OperatorCode opCode) {
     return opCode >= OP_SIMREL_CREATE_DB && opCode <= OP_SIMREL_QUERY_DATA;
 }
 
-void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx)
-{
-    switch (opCode)
-    {
+void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg,
+                             SimpleRelExecCtxT *execCtx) {
+    switch (opCode) {
     case OP_SIMREL_CREATE_DB:
         execCtx->opCode = OP_SIMREL_CREATE_DB;
         DeseriString((uint8_t **)&usrMsg, execCtx->dbName);
@@ -54,7 +51,9 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
     case OP_SIMREL_CREATE_TABLE:
         // 填充 labelJson
         execCtx->opCode = OP_SIMREL_CREATE_TABLE;
-        DeseriString((uint8_t **)&usrMsg, execCtx->labelJson);
+        char *bufCursor = usrMsg;
+        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
+        DeseriString((uint8_t **)&bufCursor, execCtx->labelJson);
         break;
     case OP_SIMREL_DROP_TABLE:
         execCtx->opCode = OP_SIMREL_DROP_TABLE;
@@ -73,10 +72,9 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
     }
 }
 
-void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExecCtxT *execCtx)
-{
-    switch (opCode)
-    {
+void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf,
+                              SimpleRelExecCtxT *execCtx) {
+    switch (opCode) {
     case OP_SIMREL_CREATE_DB:
         SeriInt((uint8_t **)&resultBuf, execCtx->dbId);
         break;
@@ -98,10 +96,9 @@ void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExe
     }
 }
 
-Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen)
-{
-    if (!IsSimpleRelOpCode(opCode))
-    {
+Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg,
+                               char *resultBuf, uint32_t bufLen) {
+    if (!IsSimpleRelOpCode(opCode)) {
         error_info("simple rel op code invaild, opCode is %d", opCode);
         return GMERR_SRDB_OP_CODE_INVAILD;
     }
@@ -110,8 +107,7 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     // 根据opCode 解析execCtx
     RtSRInitExecCtxByOpCode(opCode, usrMsg, &execCtx);
     Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
-    if (ret != GMERR_OK)
-    {
+    if (ret != GMERR_OK) {
         error_info("process simple rel op code failed, opCode is %d", opCode);
         return ret;
     }
@@ -120,10 +116,9 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     return GMERR_OK;
 }
 
-Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen)
-{
-    switch (opCode)
-    {
+Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf,
+                       uint32_t bufLen) {
+    switch (opCode) {
     case OP_ADD_TEST:
         return RtHandleAddTest(usrMsg, resultBuf, bufLen);
     case OP_SIMREL_CREATE_DB:

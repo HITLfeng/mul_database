@@ -16,6 +16,12 @@ void SeriIntM(uint8_t **bufCursor, int32_t value)
     *bufCursor += sizeof(int32_t);
 }
 
+void SeriUint32M(uint8_t **bufCursor, uint32_t value)
+{
+    *((uint32_t *)(*bufCursor)) = value;
+    *bufCursor += sizeof(uint32_t);
+}
+
 void SeriStringM(char **bufCursor, const char *value)
 {
     uint32_t strLen = strlen(value);
@@ -37,6 +43,13 @@ int32_t DeseriIntM(uint8_t **bufCursor)
 {
     int32_t value = *((int32_t *)(*bufCursor));
     *bufCursor += sizeof(int32_t);
+    return value;
+}
+
+uint32_t DeseriUint32M(uint8_t **bufCursor)
+{
+    uint32_t value = *((uint32_t *)(*bufCursor));
+    *bufCursor += sizeof(uint32_t);
     return value;
 }
 

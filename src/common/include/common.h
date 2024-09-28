@@ -33,7 +33,7 @@ extern "C" {
 
 
 // 规格约束
-#define SR_DB_NAME_MAX_LENGTH 128
+
 
 #define STRLEN(str) (strlen(str) + 1)
 /*
@@ -82,13 +82,14 @@ typedef uint32_t Status;
 #define GMERR_DATAMODEL_SRDB_NAME_TOO_LONG 4001002
 #define GMERR_DATAMODEL_SRDB_GET_GMANGER_FAILED 4001003
 #define GMERR_DATAMODEL_SRDB_NAME_EXISTED 4001004
-#define GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED 4001004
-#define GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL 4001005
+#define GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED 4001005
+#define GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL 4001006
+#define GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED 4001007
  
-#define GMERR_DATAMODEL_SRLABEL_NAME_EXISTED 4001006
-#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_NULL 4001007
-#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_INVAILD 4001008
-#define GMERR_DATAMODEL_SR_CREATE_LABEL_FIELDS_OUTRANGE 4001009
+#define GMERR_DATAMODEL_SRLABEL_NAME_EXISTED 4001506
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_NULL 4001507
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_INVAILD 4001508
+#define GMERR_DATAMODEL_SR_CREATE_LABEL_FIELDS_OUTRANGE 4001509
 
 /*
  * 断言非空函数
@@ -113,18 +114,7 @@ inline static void DB_POINT3(const void *pointer1, const void *pointer2, const v
     assert(pointer3 != NULL);
 }
 
-// simple rel 相关传递机构体
-typedef struct SimpleRelExecCtx
-{
-    OperatorCode opCode;
-    char dbName[SR_DB_NAME_MAX_LENGTH];
-    char labelName[SR_DB_NAME_MAX_LENGTH];
-    const char *labelJson;
-    uint32_t dbId;
-    uint32_t labelId;
-    uint32_t fieldCnt;
-    uint32_t *fieldType;
-} SimpleRelExecCtxT;
+
 
 #ifdef __cplusplus
 }

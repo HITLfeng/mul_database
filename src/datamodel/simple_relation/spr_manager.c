@@ -39,9 +39,23 @@ SrDbCtrlManagerT *GetDbCtrlManager(void)
     return g_srDbCtrlManager;
 }
 
-bool IsLabelNameExist(const char *dbName, const char *labelName)
+bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName)
 {
-    DB_POINT2(dbName, labelName);
+    DB_POINT2(dbCtrl, labelName);
+    for (uint32_t i = 0; i < DbVectorGetSize(&dbCtrl->labelCtrlList); i++)
+    {
+        SrLabelT *label = (SrLabelT *)DbVectorGetItem(&dbCtrl->labelCtrlList, i);
+        if (label == NULL)
+        {
+            // 理论上不会走到这里
+            log_error("get label failed when IsLabelNameExist.");
+            return false;
+        }
+        if (strcmp(label->labelName, labelName) == 0)
+        {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -85,6 +99,26 @@ SrDbCtrlT * DmGetDbCtrlByName(const char *dbName)
             return NULL;
         }
         if (strcmp(dbCtrl->dbName, dbName) == 0)
+        {
+            return dbCtrl;
+        }
+    }
+    return NULL;
+}
+
+SrDbCtrlT * DmGetDbCtrlByDbId(uint32_t dbId)
+{
+    DB_POINT(g_srDbCtrlManager);
+    for (uint32_t i = 0; i < DbVectorGetSize(&g_srDbCtrlManager->dbCtrlList); i++)
+    {
+        SrDbCtrlT *dbCtrl = (SrDbCtrlT *)DbVectorGetItem(&g_srDbCtrlManager->dbCtrlList, i);
+        if (dbCtrl == NULL)
+        {
+            // 理论上不会走到这里
+            log_error("DmGetDbCtrlByName: get dbCtrl failed.");
+            return NULL;
+        }
+        if (dbCtrl->dbId == dbId)
         {
             return dbCtrl;
         }

@@ -20,7 +20,7 @@ Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx)
         log_error("SrCheckCreateDbArgs: dbName is null");
         return GMERR_DATAMODEL_SRDB_NAME_NULL;
     }
-    if (strlen(execCtx->dbName) > SR_DBNAME_MAX_LENGTH)
+    if (strlen(execCtx->dbName) > SR_DB_NAME_MAX_LENGTH)
     {
         log_error("SrCheckCreateDbArgs: dbName is too long");
         return GMERR_DATAMODEL_SRDB_NAME_TOO_LONG;
@@ -47,10 +47,10 @@ Status SrDmCreateDb(SimpleRelExecCtxT *execCtx)
         log_error("SrDmCreateDb: dbName alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
-    ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelCtrlT));
+    ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
     if (ret != GMERR_OK)
     {
-        KVMemFree(dbCtrl.dbName, sizeof(SrLabelCtrlT));
+        KVMemFree(dbCtrl.dbName, sizeof(SrLabelT));
         log_error("SrDmCreateDb: DbVectorInit labelCtrlList failed.");
         return ret;
     }
