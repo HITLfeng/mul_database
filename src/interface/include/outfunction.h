@@ -62,6 +62,9 @@ CliStatus SRCQueryData(DbConnectT *conn, const char *labelName, const char *key,
 // 删除数据
 CliStatus SRCDeleteData(DbConnectT *conn, const char *labelName, const char *key);
 
+// DFX 关系表
+CliStatus SRCTraceDbDesc(DbConnectT *conn, uint32_t dbId);
+
 
 
 

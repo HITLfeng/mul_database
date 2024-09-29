@@ -17,6 +17,8 @@ Status DmProcessSimpleRelOpCode(OperatorCode opCode,
         break;
     case OP_SIMREL_QUERY_DATA:
         break;
+    case OP_SIMREL_DFX_DB_DESC:
+        return SrDmGetDbDesc(execCtx);
     default:
         break;
     }

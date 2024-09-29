@@ -207,3 +207,30 @@ Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
 }
 
 // Status SrDmInsertData(SimpleRelExecCtxT *execCtx){}
+
+Status SrDmGetDbDesc(SimpleRelExecCtxT *execCtx) {
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("SrDmCreateTable: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    // 打印表的个数
+    printf("查询数据库ID为:%u\n", execCtx->dbId);
+    printf("数据库中表的数量为:%u\n", DbVectorGetSize(&dbCtrl->labelCtrlList));
+    for (uint32_t i = 0; i < DbVectorGetSize(&dbCtrl->labelCtrlList); i++) {
+        SrLabelT *labelCtrl = (SrLabelT *)DbVectorGetItem(&dbCtrl->labelCtrlList, i);
+        printf("第%d个表的信息为:\n", i);
+        printf("表ID为:%u\n", labelCtrl->labelId);
+        printf("表名称为:%s\n", labelCtrl->labelName);
+        printf("表中字段的数量为:%u\n", labelCtrl->fieldCnt);
+        for (uint32_t j = 0; j < labelCtrl->fieldCnt; j++) {
+            SrPropertyT *property = &labelCtrl->properties[j];
+            printf("第%d个字段的信息为:\n", j);
+            printf("字段名称为:%s ", property->fieldName);
+            printf("字段类型为:%u ", property->fieldType);
+            printf("字段大小为:%u\n", property->fieldSize);
+        }
+    }
+    return GMERR_OK;
+}

@@ -39,6 +39,8 @@ void SeriChar(uint8_t **bufCursor, char value);
 
 void SeriInt(uint8_t **bufCursor, int32_t value);
 
+void SeriUint32(uint8_t **bufCursor, uint32_t value);
+
 // 反序列化
 char DeseriChar(uint8_t **bufCursor);
 

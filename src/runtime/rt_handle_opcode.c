@@ -33,7 +33,7 @@ Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     return GMERR_OK;
 }
 
-bool IsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode <= OP_SIMREL_QUERY_DATA; }
+bool IsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode <= OP_SIMREL_DFX_DB_DESC; }
 
 void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx) {
     switch (opCode) {
@@ -64,6 +64,11 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
     case OP_SIMREL_QUERY_DATA:
         execCtx->opCode = OP_SIMREL_QUERY_DATA;
         break;
+    case OP_SIMREL_DFX_DB_DESC:
+        execCtx->opCode = OP_SIMREL_DFX_DB_DESC;
+        char *bufCursor2 = usrMsg;
+        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor2);
+        break;
     default:
         break;
     }
@@ -86,6 +91,8 @@ void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExe
     case OP_SIMREL_DELETE_DATA:
         break;
     case OP_SIMREL_QUERY_DATA:
+        break;
+    case OP_SIMREL_DFX_DB_DESC:
         break;
     default:
         break;
@@ -122,6 +129,7 @@ Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint3
     case OP_SIMREL_INSERT_DATA:
     case OP_SIMREL_DELETE_DATA:
     case OP_SIMREL_QUERY_DATA:
+    case OP_SIMREL_DFX_DB_DESC:
         // 只需要DbName的走这个分支
 
         return RtHandleSimpleRelOpCode(opCode, usrMsg, resultBuf, bufLen);

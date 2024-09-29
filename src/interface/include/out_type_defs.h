@@ -31,6 +31,7 @@ typedef enum OperatorCode
     OP_SIMREL_INSERT_DATA,
     OP_SIMREL_DELETE_DATA,
     OP_SIMREL_QUERY_DATA,
+    OP_SIMREL_DFX_DB_DESC,
 
     // END
     OP_BUTT,

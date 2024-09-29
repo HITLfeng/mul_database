@@ -67,4 +67,7 @@ Status SrDmDropDb(SimpleRelExecCtxT *execCtx);
 Status SrDmCreateTable(SimpleRelExecCtxT *execCtx);
 Status SrDmInsertData(SimpleRelExecCtxT *execCtx);
 
+Status SrDmGetDbDesc(SimpleRelExecCtxT *execCtx);
+
+
 #endif // __SPR_COMMON_H__
