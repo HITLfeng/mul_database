@@ -9,6 +9,7 @@
 
 #include "include/client_common.h"
 
+// 序列化单段字符串用此接口
 void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf) {
     DB_POINT2(usrMsgBuf, buf);
     char *bufCursor = usrMsgBuf;
@@ -22,169 +23,105 @@ void SetSRSetCreateTableMsgBuf(char *usrMsgBuf, uint32_t dbId, const char *buf) 
     SeriStringM(&bufCursor, buf);
 }
 
-void CltParseBaseMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result) {
-    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)respBuf;
-    result->ret = respHead->status;
-    return;
-}
-
-CliStatus CltParseCreateDbMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result) {
+CliStatus CltParseCreateDbMsgBuf(MsgBufResponseT *respBuf, UsrDataBaseT *result) {
     DB_POINT2(respBuf, result);
     CltParseBaseMsgBuf(respBuf, result);
     // 解析数据
-    UsrResultCreateDbT *createDbRes = (UsrResultCreateDbT *)result;
+    UsrDataSimpleRelT *createDbRes = (UsrDataSimpleRelT *)result;
     uint8_t *bufCursor = GetUsrDataPosition((uint8_t *)respBuf);
-    createDbRes->dbId = DeseriInt(&bufCursor);
+    createDbRes->srData.dbId = DeseriInt(&bufCursor);
     return GMERR_OK;
+}
+
+void SRCInitMsgBuf(MsgBufRequestT *msgBuf, OperatorCode opCode) {
+    DB_POINT(msgBuf);
+    memset(msgBuf, 0, sizeof(MsgBufRequestT));
+    msgBuf->opCode = opCode;
+    msgBuf->requestBufLen = BUF_SIZE;
+}
+
+// create db 函数
+
+void SrParseCreateDbRspCb(uint8_t **respBuf, UsrDataBaseT *result) {
+    DB_POINT2(respBuf, result);
+    // 1.解析服务端返回值
+    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)*respBuf;
+    if (respHead->status != GMERR_OK) {
+        log_error("SrParseCreateDbRspCb error, server status = %d", respHead->status);
+        return;
+    }
+    // 2.解析数据
+    *respBuf += sizeof(MsgBufResponseHeadT);
+    UsrDataSimpleRelT *srRes = (UsrDataSimpleRelT *)result;
+    srRes->ret = respHead->status;
+    srRes->srData.dbId = DeseriInt(respBuf);
 }
 
 CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId) {
     DB_POINT3(conn, dbName, dbId);
-    OperatorCode opCode = OP_SIMREL_CREATE_DB;
 
     // 申请栈内存
     MsgBufRequestT msgBuf = {0};
-    msgBuf.opCode = opCode;
-    msgBuf.requestBufLen = BUF_SIZE;
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_CREATE_DB);
 
     // len/dbname
     SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, dbName);
 
-    CliStatus ret = KVCSend(conn, &msgBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("send calc request succ SRCCreateDb.");
-
-    // 读取服务器返回的消息
-    MsgBufResponseT respBuf = {0};
-    ret = KVCRecv(conn, &respBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("recv calc result succ SRCCreateDb.");
-    // 解析服务器返回的消息
-    UsrResultCreateDbT createDbRes = {0};
-    UsrResultBaseT *result = (UsrResultBaseT *)&createDbRes;
-    ret = CltParseCreateDbMsgBuf(&respBuf, result);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
+    UsrDataSimpleRelT createDbRes = {0};
+    KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseCreateDbRspCb, (UsrDataBaseT *)&createDbRes);
     if (createDbRes.ret != GMERR_OK) {
         log_error("create db fail, ret is %u.", createDbRes.ret);
-        return ret;
+        return GMERR_OK;
     }
-    log_info("parse calc result succ");
-    *dbId = createDbRes.dbId;
+    *dbId = createDbRes.srData.dbId;
     return GMERR_OK;
 }
 
+// drop db 函数 TODO 改为根据DBID删除DB
+
 CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName) {
     DB_POINT2(conn, dbName);
-    OperatorCode opCode = OP_SIMREL_DROP_DB;
 
     // 申请栈内存
     MsgBufRequestT msgBuf = {0};
-    msgBuf.opCode = opCode;
-    msgBuf.requestBufLen = BUF_SIZE;
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_DROP_DB);
 
     // len/dbname
     SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, dbName);
 
-    CliStatus ret = KVCSend(conn, &msgBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("send SRCDeleteDb request succ SRCDeleteDb.");
-
-    // 读取服务器返回的消息
-    MsgBufResponseT respBuf = {0};
-    ret = KVCRecv(conn, &respBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("recv SRCDeleteDb result succ SRCDeleteDb.");
-    // 解析服务器返回的消息
-    UsrResultBaseT result = {0};
-    CltParseBaseMsgBuf(&respBuf, &result);
-    if (result.ret != GMERR_OK) {
-        log_error("drop db fail, ret is %u.", result.ret);
-        return ret;
-    }
-    log_info("parse SRCDeleteDb result succ");
-    return GMERR_OK;
+    return KVCSendRequestAndRecvResponse(conn, &msgBuf, NULL, NULL);
 }
 
 CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *labelJson) {
     DB_POINT2(conn, labelJson);
-    OperatorCode opCode = OP_SIMREL_CREATE_TABLE;
 
     // 申请栈内存
     MsgBufRequestT msgBuf = {0};
-    msgBuf.opCode = opCode;
-    msgBuf.requestBufLen = BUF_SIZE;
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_CREATE_TABLE);
 
     // len/dbname
     SetSRSetCreateTableMsgBuf(msgBuf.requestMsg, dbId, labelJson);
-
-    CliStatus ret = KVCSend(conn, &msgBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("send SRCCreateLabelWithJson request succ.");
-
-    // 读取服务器返回的消息
-    MsgBufResponseT respBuf = {0};
-    ret = KVCRecv(conn, &respBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("recv SRCCreateLabelWithJson result succ.");
-    // 解析服务器返回的消息
-    UsrResultBaseT result = {0};
-    CltParseBaseMsgBuf(&respBuf, &result);
-    if (result.ret != GMERR_OK) {
-        log_error("SRCCreateLabelWithJson fail, ret is %u.", result.ret);
-        return ret;
-    }
-    log_info("parse SRCCreateLabelWithJson result succ");
-    return GMERR_OK;
+    return KVCSendRequestAndRecvResponse(conn, &msgBuf, NULL, NULL);
 }
 
 // DFX 关系表
 CliStatus SRCTraceDbDesc(DbConnectT *conn, uint32_t dbId) {
     DB_POINT(conn);
-    OperatorCode opCode = OP_SIMREL_DFX_DB_DESC;
 
-    // 申请栈内存
+    // 初始化 requestHeader
     MsgBufRequestT msgBuf = {0};
-    msgBuf.opCode = opCode;
-    msgBuf.requestBufLen = BUF_SIZE;
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_DFX_DB_DESC);
 
-    // len/dbname
+    // 序列化 msgBuf.requestMsg
     char *bufCursor = msgBuf.requestMsg;
     SeriUint32((uint8_t **)&bufCursor, dbId);
 
-    CliStatus ret = KVCSend(conn, &msgBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("send SRCTraceDbDesc request succ.");
-
-    // 读取服务器返回的消息
-    MsgBufResponseT respBuf = {0};
-    ret = KVCRecv(conn, &respBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("recv SRCTraceDbDesc result succ.");
-    // 解析服务器返回的消息
-    UsrResultBaseT result = {0};
-    CltParseBaseMsgBuf(&respBuf, &result);
-    if (result.ret != GMERR_OK) {
-        log_error("SRCTraceDbDesc fail, ret is %u.", result.ret);
-        return ret;
-    }
-    log_info("parse SRCTraceDbDesc result succ");
-    return GMERR_OK;
+    // 客户端服务端错误码混合返回
+    return KVCSendRequestAndRecvResponse(conn, &msgBuf, NULL, NULL);
 }
+
+// 2024/9/30
+// 客户端函数统一重构整改
+// 1.初始化requestHeader
+// 2.序列化msgBuf
+// 3.发送并且等待响应 调用回调函数解析响应

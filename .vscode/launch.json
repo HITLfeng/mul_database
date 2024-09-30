@@ -22,12 +22,12 @@
             "name": "启动客户端",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/client/main.cpp",
+            "program": "/root/db/mul_database/test/kv-test",
             "args": [
-                "--gtest_filter=YourTestFilter"
+                "--gtest_filter=*"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "/root/db/mul_database/test",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
@@ -42,10 +42,4 @@
             // "preLaunchTask": "编译客户端"
         }
     ]
-    // "compounds": [
-    //     {
-    //         "name": "同时启动客户端和服务端",
-    //         "configurations": ["启动服务端", "启动客户端"]
-    //     }
-    // ]
 }

@@ -55,7 +55,8 @@
         "spr_common.h": "c",
         "test_common.h": "c",
         "gtest.h": "c",
-        "jansson.h": "c"
+        "jansson.h": "c",
+        "client_common.h": "c"
     },
     "editor.tokenColorCustomizations": {
         "comments": "#00fc00",
@@ -67,7 +68,8 @@
         "keywords": {
             "fontStyle": "bold",
             "foreground": "#56d6ba"
-        }
+        },
+        "numbers": "#e5ff00"
     },
     // "editor.wordWrap": "wordWrapColumn",
     // "editor.wordWrapColumn": 2000,

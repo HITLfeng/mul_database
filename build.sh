@@ -28,6 +28,8 @@ case "$1" in
         mkdir -p ./output/include
         cp ./src/interface/include/* ./output/include/
         source ./innerbuild.sh
+        source scripts/env.sh
+
         messageShow
         ;;
 esac

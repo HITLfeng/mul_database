@@ -33,7 +33,7 @@ CliStatus KVCSend(DbConnectT *conn, const MsgBufRequestT *msgBuf);
 CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf);
 
 // 对外接口测试函数
-CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrResultBaseT *result);
+CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, int *result);
 
 
 

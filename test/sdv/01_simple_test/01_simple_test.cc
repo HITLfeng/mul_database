@@ -25,7 +25,7 @@ TEST_F(SimpleRelationTest, TestCreateDb)
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
-    // UsrResultCreateDbT result = {0};
+    // UsrDataSimpleRelT result = {0};
 
     uint32_t dbId = 0;
     ASSERT_EQ(GMERR_OK, SRCCreateDb(conn, "my_first_db_name", &dbId));
@@ -48,7 +48,7 @@ TEST_F(SimpleRelationTest, TestCreateTable)
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
-    // UsrResultCreateDbT result = {0};
+    // UsrDataSimpleRelT result = {0};
 
     uint32_t dbId = 0;
     ASSERT_EQ(GMERR_OK, SRCCreateDb(conn, "my_first_db_name2", &dbId));
@@ -75,7 +75,7 @@ TEST_F(SimpleRelationTest, TestCreateTableDFX)
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
-    // UsrResultCreateDbT result = {0};
+    // UsrDataSimpleRelT result = {0};
 
     uint32_t dbId = 0;
     ASSERT_EQ(GMERR_OK, SRCCreateDb(conn, "my_first_db_name3", &dbId));

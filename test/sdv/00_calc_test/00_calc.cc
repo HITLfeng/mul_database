@@ -25,12 +25,11 @@ TEST_F(KVCalcTest, ConnectTest)
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
-    UsrResultCalcT result = {0};
-    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 1, 2, CALC_ADD, (UsrResultBaseT *)&result));
+    int32_t result = 0;
+    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 1, 2, CALC_ADD, &result));
 
     // 检查结果
-    EXPECT_EQ(GMERR_OK, result.ret);
-    EXPECT_EQ(3, result.calcAns);
+    EXPECT_EQ(3, result);
 
     ASSERT_EQ(GMERR_OK, KVCDisconnect(conn));
 }
@@ -43,27 +42,23 @@ TEST_F(KVCalcTest, ConnectTryManyTest)
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
 
-    UsrResultCalcT result = {0};
-    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 1, 2, CALC_ADD, (UsrResultBaseT *)&result));
+    int32_t result = 0;
+    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 1, 2, CALC_ADD, &result));
 
     // 检查结果
-    EXPECT_EQ(GMERR_OK, result.ret);
-    EXPECT_EQ(3, result.calcAns);
+    EXPECT_EQ(3, result);
 
     result = {0};
-    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 11, 20, CALC_MUL, (UsrResultBaseT *)&result));
-    EXPECT_EQ(GMERR_OK, result.ret);
-    EXPECT_EQ(220, result.calcAns);
+    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 11, 20, CALC_MUL, &result));
+    EXPECT_EQ(220, result);
 
     result = {0};
-    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 12, 20, CALC_SUB, (UsrResultBaseT *)&result));
-    EXPECT_EQ(GMERR_OK, result.ret);
-    EXPECT_EQ(-8, result.calcAns);
+    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 12, 20, CALC_SUB, &result));
+    EXPECT_EQ(-8, result);
 
     result = {0};
-    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 9, 3, CALC_DIV, (UsrResultBaseT *)&result));
-    EXPECT_EQ(GMERR_OK, result.ret);
-    EXPECT_EQ(3, result.calcAns);
+    ASSERT_EQ(GMERR_OK, KVCCalcTwoNumber(conn, 9, 3, CALC_DIV, &result));
+    EXPECT_EQ(3, result);
 
     ASSERT_EQ(GMERR_OK, KVCDisconnect(conn));
 }

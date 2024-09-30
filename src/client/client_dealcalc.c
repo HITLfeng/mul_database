@@ -19,18 +19,35 @@ void SetCalcUsrMsgBuf(char *usrMsgBuf, int x, int y, CalcOptionT opt)
 
 
 
-CliStatus CltParseCalcMsgBuf(MsgBufResponseT *respBuf, UsrResultBaseT *result)
+// CliStatus CltParseCalcMsgBuf(MsgBufResponseT *respBuf, UsrDataBaseT *result)
+// {
+//     DB_POINT2(respBuf, result);
+//     MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)respBuf;
+//     UsrDataCalcT *calcRes = (UsrDataCalcT *)result;
+//     calcRes->ret = respHead->status;
+//     uint8_t *bufCursor = GetUsrDataPosition((uint8_t *)respBuf);
+//     calcRes->calcAns = DeseriInt(&bufCursor);
+//     return GMERR_OK;
+// }
+
+void CltParseCalcRspBuf(uint8_t **respBuf, UsrDataBaseT *result)
 {
     DB_POINT2(respBuf, result);
-    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)respBuf;
-    UsrResultCalcT *calcRes = (UsrResultCalcT *)result;
+    // 1.解析服务端返回值
+    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)*respBuf;
+    if (respHead->status != GMERR_OK)
+    {
+        log_error("calc error, server status = %d", respHead->status);
+        return;
+    }
+    // 2.解析数据
+    *respBuf += sizeof(MsgBufResponseHeadT);
+    UsrDataCalcT *calcRes = (UsrDataCalcT *)result;
     calcRes->ret = respHead->status;
-    uint8_t *bufCursor = GetUsrDataPosition((uint8_t *)respBuf);
-    calcRes->calcAns = DeseriInt(&bufCursor);
-    return GMERR_OK;
+    calcRes->calcAns = DeseriInt(respBuf);
 }
 
-CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrResultBaseT *result)
+CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, int *result)
 {
     DB_POINT2(conn, result);
     OperatorCode opCode = OP_ADD_TEST;
@@ -41,25 +58,13 @@ CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, UsrR
 
     SetCalcUsrMsgBuf(msgBuf.requestMsg, x, y, opt);
 
-    CliStatus ret = KVCSend(conn, &msgBuf);
-    if (ret != GMERR_OK) {
-        return ret;
+    UsrDataCalcT calcRes = {0};
+    CliStatus ret = KVCSendRequestAndRecvResponse(conn, &msgBuf, CltParseCalcRspBuf, (UsrDataBaseT *)&calcRes);
+    if (calcRes.ret != GMERR_OK)
+    {
+        log_error("calc error and can not get result, server status = %d", calcRes.ret);
+        return GMERR_OK; // 客户端返回成功
     }
-    log_info("send calc request succ KVCCalcTwoNumber.");
-
-    // 读取服务器返回的消息
-    MsgBufResponseT respBuf = {0};
-    ret = KVCRecv(conn, &respBuf);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("recv calc result succ KVCCalcTwoNumber.");
-    // 解析服务器返回的消息
-    ret = CltParseCalcMsgBuf(&respBuf, result);
-    if (ret != GMERR_OK) {
-        return ret;
-    }
-    log_info("parse calc result succ");
-
+    *result = calcRes.calcAns;
     return GMERR_OK;
 }

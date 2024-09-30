@@ -72,24 +72,9 @@ typedef struct KVConnect
     // uint16_t port;
 } DbConnectT;
 
-typedef struct UsrResultBase {
-    uint32_t ret;
-} UsrResultBaseT;
-
-typedef struct UsrResultCalc {
-    uint32_t ret;
-    uint32_t calcAns;
-} UsrResultCalcT;
-
-
 // ************************************
 // SIMPLERELATION 相关类型定义 start
 // ************************************
-
-typedef struct UsrResultCreateDb {
-    uint32_t ret;
-    uint32_t dbId;
-} UsrResultCreateDbT;
 
 typedef enum SrLabelFiledType
 {
