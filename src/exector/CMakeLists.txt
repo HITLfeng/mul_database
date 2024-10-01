@@ -2,7 +2,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 # 指定项目名称 （版本 备注 语言...）
-project(kv-database-server-runtime)
+project(kv-database-server-exector)
 
 # set(HOME /root/project/all2023/kv-database)
 # set(EXECUTABLE_OUTPUT_PATH ${HOME}/test)
@@ -23,8 +23,10 @@ include_directories(${COMMON_PATH}/include)
 message(${COMMON_PATH}/include)
 include_directories(${EXECTOR_PATH}/include)
 message(${EXECTOR_PATH}/include)
+include_directories(${DATAMODEL_PATH}/simple_relation/include)
+message(${DATAMODEL_PATH}/include)
 
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
 
-add_library(kvruntime SHARED ${UTILS_LIB})
+add_library(kvexector SHARED ${UTILS_LIB})

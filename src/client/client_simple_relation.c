@@ -68,9 +68,14 @@ CliStatus SRCCreateDb(DbConnectT *conn, const char *dbName, uint32_t *dbId) {
     SetSRSetDbUsrMsgBuf(msgBuf.requestMsg, dbName);
 
     UsrDataSimpleRelT createDbRes = {0};
-    KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseCreateDbRspCb, (UsrDataBaseT *)&createDbRes);
+
+    CliStatus ret = KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseCreateDbRspCb, (UsrDataBaseT *)&createDbRes);
+    if (ret != GMERR_OK) {
+        log_error("CLIENT: create db fail.");
+        return ret;
+    }
     if (createDbRes.ret != GMERR_OK) {
-        log_error("create db fail, ret is %u.", createDbRes.ret);
+        log_error("SERVER: create db fail, ret is %u.", createDbRes.ret);
         return GMERR_OK;
     }
     *dbId = createDbRes.srData.dbId;
@@ -92,7 +97,22 @@ CliStatus SRCDeleteDb(DbConnectT *conn, const char *dbName) {
     return KVCSendRequestAndRecvResponse(conn, &msgBuf, NULL, NULL);
 }
 
-CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *labelJson) {
+void SrParseCreateTableRspCb(uint8_t **respBuf, UsrDataBaseT *result) {
+    DB_POINT2(respBuf, result);
+    // 1.解析服务端返回值
+    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)*respBuf;
+    if (respHead->status != GMERR_OK) {
+        log_error("SrParseCreateTableRspCb error, server status = %d", respHead->status);
+        return;
+    }
+    // 2.解析数据
+    *respBuf += sizeof(MsgBufResponseHeadT);
+    UsrDataSimpleRelT *srRes = (UsrDataSimpleRelT *)result;
+    srRes->ret = respHead->status;
+    srRes->srData.labelId = DeseriInt(respBuf);
+}
+
+CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *labelJson, uint32_t *labelId) {
     DB_POINT2(conn, labelJson);
 
     // 申请栈内存
@@ -101,7 +121,20 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
 
     // len/dbname
     SetSRSetCreateTableMsgBuf(msgBuf.requestMsg, dbId, labelJson);
-    return KVCSendRequestAndRecvResponse(conn, &msgBuf, NULL, NULL);
+
+    UsrDataSimpleRelT createTableRes = {0};
+    CliStatus ret =
+        KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseCreateTableRspCb, (UsrDataBaseT *)&createTableRes);
+    if (ret != GMERR_OK) {
+        log_error("CLIENT: create table fail.");
+        return ret;
+    }
+    if (createTableRes.ret != GMERR_OK) {
+        log_error("SERVER: create table fail, ret is %u.", createTableRes.ret);
+        return GMERR_OK;
+    }
+    *labelId = createTableRes.srData.labelId;
+    return GMERR_OK;
 }
 
 // DFX 关系表

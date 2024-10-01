@@ -6,7 +6,9 @@
 #include "../../../common/include/common.h"
 #include "../../../common/include/kv_memory.h"
 
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 typedef struct SrDbCtrl
 {
     char *dbName;
@@ -62,12 +64,18 @@ bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName);
 // void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
 void DmClearAllLabels(const char *dbName);
 
-Status SrDmCreateDb(SimpleRelExecCtxT *execCtx);
-Status SrDmDropDb(SimpleRelExecCtxT *execCtx);
-Status SrDmCreateTable(SimpleRelExecCtxT *execCtx);
-Status SrDmInsertData(SimpleRelExecCtxT *execCtx);
+Status DMSrCreateDb(QryStmtT *stmt);
+Status DMSrDropDb(QryStmtT *stmt);
+Status DMSrCreateTable(QryStmtT *stmt);
+Status DMSrInsertData(QryStmtT *stmt);
 
-Status SrDmGetDbDesc(SimpleRelExecCtxT *execCtx);
+Status DMSrGetDbDesc(QryStmtT *stmt);
 
+
+
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // __SPR_COMMON_H__

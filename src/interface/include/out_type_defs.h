@@ -6,8 +6,7 @@
 #define BUF_SIZE 1024
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 // SR 字段名长度
@@ -19,11 +18,9 @@ extern "C"
 // json报文最大允许长度2M
 #define SR_LABEL_JSON_MAX_LENGTH 2048
 
-
-typedef enum OperatorCode
-{
+typedef enum OperatorCode {
     OP_ADD_TEST = 0,
-    // SIMPLE RELATION 
+    // SIMPLE RELATION
     OP_SIMREL_CREATE_DB = 10,
     OP_SIMREL_DROP_DB,
     OP_SIMREL_CREATE_TABLE,
@@ -32,40 +29,35 @@ typedef enum OperatorCode
     OP_SIMREL_DELETE_DATA,
     OP_SIMREL_QUERY_DATA,
     OP_SIMREL_DFX_DB_DESC,
+    OP_SIMREL_BUTT,
 
     // END
     OP_BUTT,
 } OperatorCode;
 
-
-typedef struct MsgBufRequestHead
-{
+typedef struct MsgBufRequestHead {
     OperatorCode opCode;
     uint32_t requestBufLen;
 } MsgBufRequestHeadT;
 
-typedef struct MsgBufResponseHead
-{
+typedef struct MsgBufResponseHead {
     uint32_t status; // 服务端返回值
     uint32_t responseBufLen;
 } MsgBufResponseHeadT;
 
-typedef struct MsgBufRequest
-{
+typedef struct MsgBufRequest {
     OperatorCode opCode;
     uint32_t requestBufLen;
     char requestMsg[BUF_SIZE];
 } MsgBufRequestT;
 
-typedef struct MsgBufResponse
-{
+typedef struct MsgBufResponse {
     uint32_t status; // 服务端返回值
     uint32_t responseBufLen;
     char requestMsg[BUF_SIZE];
 } MsgBufResponseT;
 
-typedef struct KVConnect
-{
+typedef struct KVConnect {
     int socketFd;
     // int fd;
     // char ip[16];
@@ -76,8 +68,7 @@ typedef struct KVConnect
 // SIMPLERELATION 相关类型定义 start
 // ************************************
 
-typedef enum SrLabelFiledType
-{
+typedef enum SrLabelFiledType {
     SR_LABEL_FILED_TYPE_INT32 = 0,
     SR_LABEL_FILED_TYPE_UINT32 = 0,
     // SR_LABEL_FILED_TYPE_FLOAT,
@@ -87,24 +78,30 @@ typedef enum SrLabelFiledType
 
 // 这个客户端创建的时候填写
 typedef struct SrDbCreateLabelCtx {
-    uint32_t fieldCnt; // feild 个数
+    uint32_t fieldCnt;                                   // feild 个数
     SrLabelFiledTypeT fieldType[SR_LABEL_MAX_FILED_CNT]; // 属性类型数组
 } SrDbCreateLabelCtxT;
 
 // simple rel 相关传递机构体
-typedef struct SimpleRelExecCtx
-{
-    OperatorCode opCode;
+typedef struct SimpleRelExecCtx {
+    uint32_t dbId;
+    uint32_t labelId;
     char dbName[SR_DB_NAME_MAX_LENGTH];
     char labelName[SR_LABEL_NAME_MAX_LENGTH];
     char labelJson[SR_LABEL_JSON_MAX_LENGTH];
-    uint32_t dbId;
-    uint32_t labelId;
-    uint32_t fieldCnt;
-    uint32_t *fieldType;
 } SimpleRelExecCtxT;
 
+typedef struct RunCtx {
+    OperatorCode opCode;
+    void *entry;    // EE层根据opCode将runtime分发的信息解析并存入结构体中
+    void *retEntry; // runtime层根据opcode解析EE层返回的结果 解析完后请手动释放
+    uint32_t retEntryBufLen;
+    uint32_t entryLen;
+    uint32_t currDbId;    // 当前正在操作的数据库ID
+    uint32_t currLabelId; // 当前正在操作的labelID
+} RunCtxT;
 
+typedef RunCtxT QryStmtT;
 
 // ************************************
 // SIMPLERELATION 相关类型定义 end
@@ -114,6 +111,4 @@ typedef struct SimpleRelExecCtx
 }
 #endif
 
-
-
-#endif  // __OUT_TYPE_DEFS__
+#endif // __OUT_TYPE_DEFS__

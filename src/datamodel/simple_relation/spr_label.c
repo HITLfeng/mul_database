@@ -140,12 +140,13 @@ Status SrParseCreateLabelJson(const char *labelJson, SrCreateLabelCtxT *createLa
 }
 
 // TODO:异常分支资源清理
-Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
+Status DMSrCreateTable(QryStmtT *stmt) {
     // 首先获取DbCtrl
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
 
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
     if (dbCtrl == NULL) {
-        log_error("SrDmCreateTable: get dbCtrl failed.");
+        log_error("DMSrCreateTable: get dbCtrl failed.");
         return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
     }
 
@@ -162,14 +163,14 @@ Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
     }
 
     if (IsLabelNameExist(dbCtrl, createLabelCtx.labelName)) {
-        log_error("SrDmCreateTable: labelName is exist.");
+        log_error("DMSrCreateTable: labelName is exist.");
         return GMERR_DATAMODEL_SRLABEL_NAME_EXISTED;
     }
 
     SrLabelT labelCtrl = {0};
     char *labelName = (char *)KVMemAlloc(strlen(createLabelCtx.labelName) + 1);
     if (labelName == NULL) {
-        log_error("SrDmCreateDb: labelName alloc failed.");
+        log_error("DMSrCreateDb: labelName alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
     strcpy(labelName, createLabelCtx.labelName);
@@ -177,7 +178,7 @@ Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
     uint32_t memSize = createLabelCtx.fieldCnt * sizeof(SrPropertyT);
     SrPropertyT *properties = (SrPropertyT *)KVMemAlloc(memSize);
     if (properties == NULL) {
-        log_error("SrDmCreateDb: properties alloc failed.");
+        log_error("DMSrCreateDb: properties alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
     memset(properties, 0x00, memSize);
@@ -185,7 +186,7 @@ Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
         SrPropertyT *property = &properties[i];
         // char *fieldName = (char *)KVMemAlloc(strlen(createLabelCtx.properties[i].fieldName) + 1);
         // if (fieldName == NULL) {
-        //     log_error("SrDmCreateDb: fieldName alloc failed.");
+        //     log_error("DMSrCreateDb: fieldName alloc failed.");
         //     return GMERR_KV_MEMORY_ALLOC_FAILED;
         // }
         strcpy(property->fieldName, createLabelCtx.properties[i].fieldName);
@@ -203,15 +204,29 @@ Status SrDmCreateTable(SimpleRelExecCtxT *execCtx) {
         log_error("DbVectorAppend labelCtrl failed.");
         return ret;
     }
+
+    // 设置返回结果
+    uint32_t retEntryBufLen = sizeof(uint32_t);
+    void *retEntry = (void *)KVMemAlloc(retEntryBufLen);
+    if (retEntry == NULL) {
+        log_error("DMSrCreateTable: KVMemAlloc retEntry failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(retEntry, 0, retEntryBufLen);
+    *((uint32_t *)retEntry) = labelCtrl.labelId;
+    stmt->retEntry = retEntry;
+    stmt->retEntryBufLen = retEntryBufLen;
+
     return GMERR_OK;
 }
 
-// Status SrDmInsertData(SimpleRelExecCtxT *execCtx){}
+// Status DMSrInsertData(QryStmtT *stmt){}
 
-Status SrDmGetDbDesc(SimpleRelExecCtxT *execCtx) {
+Status DMSrGetDbDesc(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
     if (dbCtrl == NULL) {
-        log_error("SrDmCreateTable: get dbCtrl failed.");
+        log_error("DMSrCreateTable: get dbCtrl failed.");
         return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
     }
 

@@ -94,6 +94,24 @@ typedef uint32_t Status;
 #define GMERR_DATAMODEL_SR_CREATE_LABEL_JSON_INVAILD 4001508
 #define GMERR_DATAMODEL_SR_CREATE_LABEL_FIELDS_OUTRANGE 4001509
 
+// ****************************************
+// EE 模块错误码
+// ****************************************
+#define GMERR_EE_UNKNOWN_OPCODE 5001001
+#define GMERR_EE_INVAILD_BUFLENGTH 5001002
+#define GMERR_EE_INVAILD_OPCODE 5001003
+#define GMERR_EE_INVAILD_PARAM 5001004
+#define GMERR_EE_INVAILD_PARAM2 5001005
+#define GMERR_EE_INVAILD_PARAM3 5001006
+#define GMERR_EE_INVAILD_PARAM4 5001007
+#define GMERR_EE_INVAILD_PARAM5 5001008
+#define GMERR_EE_INVAILD_PARAM6 5001009
+#define GMERR_EE_INVAILD_PARAM7 5001010
+#define GMERR_EE_INVAILD_PARAM8 5001011
+#define GMERR_EE_INVAILD_PARAM9 5001012
+#define GMERR_EE_INVAILD_PARAM10 5001013
+
+
 /*
  * 断言非空函数
  */
@@ -116,7 +134,6 @@ inline static void DB_POINT3(const void *pointer1, const void *pointer2, const v
     assert(pointer2 != NULL);
     assert(pointer3 != NULL);
 }
-
 
 
 #ifdef __cplusplus

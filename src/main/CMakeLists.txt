@@ -34,5 +34,5 @@ set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
 # message("JANSSON_LIBRARY: ${JANSSON_LIBRARY}")
 add_executable(kvserver server_main.c)
 
-target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel ${JANSSON_LIBRARY})
+target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel kvexector ${JANSSON_LIBRARY})
 # target_link_libraries(kvserver pthread kvcommon kvinterface kvruntime kvstorage)

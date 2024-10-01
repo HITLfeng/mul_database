@@ -59,7 +59,9 @@ TEST_F(SimpleRelationTest, TestCreateTable)
 
     std::string jsonStr = ReadFileCpp("/root/db/mul_database/test/sdv/01_simple_test/schema/label1.json");
 
-    ASSERT_EQ(GMERR_OK, SRCCreateLabelWithJson(conn, dbId, jsonStr.c_str()));
+    uint32_t labelId = 0;
+    ASSERT_EQ(GMERR_OK, SRCCreateLabelWithJson(conn, dbId, jsonStr.c_str(), &labelId));
+    std::cout << "labelId: " << labelId << std::endl;
 
     ASSERT_EQ(GMERR_OK, SRCDeleteDb(conn, "my_first_db_name2"));
 
@@ -86,7 +88,8 @@ TEST_F(SimpleRelationTest, TestCreateTableDFX)
 
     std::string jsonStr = ReadFileCpp("/root/db/mul_database/test/sdv/01_simple_test/schema/label1.json");
 
-    ASSERT_EQ(GMERR_OK, SRCCreateLabelWithJson(conn, dbId, jsonStr.c_str()));
+    uint32_t labelId = 0;
+    ASSERT_EQ(GMERR_OK, SRCCreateLabelWithJson(conn, dbId, jsonStr.c_str(), &labelId));
 
     ASSERT_EQ(GMERR_OK, SRCTraceDbDesc(conn, dbId));
 

@@ -1,6 +1,6 @@
 #include "include/spr_common.h"
 
-// void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl)
+// void DmClearSingleDbCtrl(QryStmtT *stmt)
 // {
 //     if (dbCtrl->dbName != NULL)
 //     {
@@ -25,19 +25,20 @@ Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx) {
     return GMERR_OK;
 }
 
-Status SrDmCreateDb(SimpleRelExecCtxT *execCtx) {
+Status DMSrCreateDb(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     Status ret = SrCheckCreateDbArgs(execCtx);
     if (ret != GMERR_OK) {
         return ret;
     }
     if (IsDbNameExist(execCtx->dbName)) {
-        log_error("SrDmCreateDb: dbName is exist.");
+        log_error("DMSrCreateDb: dbName is exist.");
         return GMERR_DATAMODEL_SRDB_NAME_EXISTED;
     }
     SrDbCtrlT dbCtrl = {0};
     dbCtrl.dbName = (char *)KVMemAlloc(strlen(execCtx->dbName) + 1);
     if (dbCtrl.dbName == NULL) {
-        log_error("SrDmCreateDb: dbName alloc failed.");
+        log_error("DMSrCreateDb: dbName alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
     memset(dbCtrl.dbName, 0, strlen(execCtx->dbName) + 1);
@@ -45,7 +46,7 @@ Status SrDmCreateDb(SimpleRelExecCtxT *execCtx) {
     ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
     if (ret != GMERR_OK) {
         KVMemFree(dbCtrl.dbName, sizeof(SrLabelT));
-        log_error("SrDmCreateDb: DbVectorInit labelCtrlList failed.");
+        log_error("DMSrCreateDb: DbVectorInit labelCtrlList failed.");
         return ret;
     }
     dbCtrl.dbId = GenSrDbId();
@@ -55,25 +56,38 @@ Status SrDmCreateDb(SimpleRelExecCtxT *execCtx) {
     if (ret != GMERR_OK) {
         KVMemFree(dbCtrl.dbName, strlen(execCtx->dbName) + 1);
         DbVectorDestroy(&dbCtrl.labelCtrlList);
-        log_error("SrDmCreateDb: DbVectorAppendItem labelCtrlList failed.");
+        log_error("DMSrCreateDb: DbVectorAppendItem labelCtrlList failed.");
         return ret;
     }
-    execCtx->dbId = dbCtrl.dbId;
+    // 设置返回结果
+    uint32_t retEntryBufLen = sizeof(uint32_t);
+    void *retEntry = (void *)KVMemAlloc(retEntryBufLen);
+    if (retEntry == NULL) {
+        KVMemFree(dbCtrl.dbName, strlen(execCtx->dbName) + 1);
+        DbVectorDestroy(&dbCtrl.labelCtrlList);
+        log_error("DMSrCreateDb: KVMemAlloc retEntry failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(retEntry, 0, retEntryBufLen);
+    *((uint32_t *)retEntry) = dbCtrl.dbId;
+    stmt->retEntry = retEntry;
+    stmt->retEntryBufLen = retEntryBufLen;
     return GMERR_OK;
 }
 
-Status SrDmDropDb(SimpleRelExecCtxT *execCtx) {
+Status DMSrDropDb(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     Status ret = SrCheckCreateDbArgs(execCtx);
     if (ret != GMERR_OK) {
         return ret;
     }
     if (!IsDbNameExist(execCtx->dbName)) {
-        log_warn("SrDmDropDb: dbName is not exist.");
+        log_warn("DMSrDropDb: dbName is not exist.");
         return GMERR_DATAMODEL_SRDB_NAME_NOT_EXISTED;
     }
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByName(execCtx->dbName);
     if (dbCtrl == NULL) {
-        log_error("SrDmDropDb: DmGetDbCtrlByName failed.");
+        log_error("DMSrDropDb: DmGetDbCtrlByName failed.");
         return GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL;
     }
     // DmClearSingleDbCtrl(dbCtrl);

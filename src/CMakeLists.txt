@@ -16,10 +16,13 @@ set(DATAMODEL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/datamodel)
 set(COMMON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/common)
 # interface 模块的路径
 set(INTERFACE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/interface)
+# ee 模块的路径
+set(EXECTOR_PATH ${CMAKE_CURRENT_SOURCE_DIR}/exector)
 
 add_subdirectory(common)
 # add_subdirectory(interface)
 add_subdirectory(datamodel)
+add_subdirectory(exector)
 add_subdirectory(runtime)
 # add_subdirectory(storage)
 add_subdirectory(main)

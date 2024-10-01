@@ -2,6 +2,8 @@
 #include "seri_utils.h"
 #include "outfunction.h"
 // #include "spr_common.h"
+#include "ee_out_function.h"
+
 
 Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     // 序列化格式 int32_t int32_t char
@@ -33,55 +35,48 @@ Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     return GMERR_OK;
 }
 
-bool IsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode <= OP_SIMREL_DFX_DB_DESC; }
+bool IsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT; }
 
 void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx) {
+    char *bufCursor = usrMsg;
     switch (opCode) {
     case OP_SIMREL_CREATE_DB:
-        execCtx->opCode = OP_SIMREL_CREATE_DB;
         DeseriString((uint8_t **)&usrMsg, execCtx->dbName);
         break;
     case OP_SIMREL_DROP_DB:
-        execCtx->opCode = OP_SIMREL_DROP_DB;
         DeseriString((uint8_t **)&usrMsg, execCtx->dbName);
         break;
     case OP_SIMREL_CREATE_TABLE:
         // 填充 labelJson
-        execCtx->opCode = OP_SIMREL_CREATE_TABLE;
-        char *bufCursor = usrMsg;
         execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
         DeseriString((uint8_t **)&bufCursor, execCtx->labelJson);
         break;
     case OP_SIMREL_DROP_TABLE:
-        execCtx->opCode = OP_SIMREL_DROP_TABLE;
         break;
     case OP_SIMREL_INSERT_DATA:
-        execCtx->opCode = OP_SIMREL_INSERT_DATA;
         break;
     case OP_SIMREL_DELETE_DATA:
-        execCtx->opCode = OP_SIMREL_DELETE_DATA;
         break;
     case OP_SIMREL_QUERY_DATA:
-        execCtx->opCode = OP_SIMREL_QUERY_DATA;
         break;
     case OP_SIMREL_DFX_DB_DESC:
-        execCtx->opCode = OP_SIMREL_DFX_DB_DESC;
-        char *bufCursor2 = usrMsg;
-        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor2);
+        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
         break;
     default:
         break;
     }
 }
 
-void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExecCtxT *execCtx) {
-    switch (opCode) {
+void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
+    switch (stmt->opCode) {
     case OP_SIMREL_CREATE_DB:
-        SeriInt((uint8_t **)&resultBuf, execCtx->dbId);
+        SeriInt((uint8_t **)&resultBuf, *(uint32_t *)stmt->retEntry);
         break;
     case OP_SIMREL_DROP_DB:
         break;
     case OP_SIMREL_CREATE_TABLE:
+        // labelId
+        SeriInt((uint8_t **)&resultBuf, *(uint32_t *)stmt->retEntry);
         // 填充 labelJson
         break;
     case OP_SIMREL_DROP_TABLE:
@@ -97,6 +92,14 @@ void RtSRSetResultBufByOpCode(OperatorCode opCode, char *resultBuf, SimpleRelExe
     default:
         break;
     }
+    if (stmt->retEntry != NULL) {
+        KVMemFree(stmt->retEntry, stmt->retEntryBufLen);
+    }
+}
+
+void RtInitStmt(QryStmtT *stmt, OperatorCode opCode, void *execCtx) {
+    stmt->opCode = opCode;
+    stmt->entry = execCtx;
 }
 
 Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen) {
@@ -104,24 +107,42 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
         log_error("simple rel op code invaild, opCode is %d", opCode);
         return GMERR_SRDB_OP_CODE_INVAILD;
     }
+
+    QryStmtT *stmt = (QryStmtT *)KVMemAlloc(sizeof(QryStmtT));
+    if (stmt == NULL) {
+        log_error("alloc qry stmt failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(stmt, 0, sizeof(QryStmtT));
+
+    // simple rel 通用结构体
     SimpleRelExecCtxT execCtx = {0};
 
     // 根据opCode 解析execCtx
     RtSRInitExecCtxByOpCode(opCode, usrMsg, &execCtx);
-    Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
+
+    RtInitStmt(stmt, opCode, (void *)&execCtx);
+
+    Status ret = EEProcessRuntimeOpCode(stmt);
     if (ret != GMERR_OK) {
         log_error("process simple rel op code failed, opCode is %d", opCode);
         return ret;
     }
+
+    // Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
     // 根据opCode 填写返回结果
-    RtSRSetResultBufByOpCode(opCode, resultBuf, &execCtx);
+    RtSRSetResultBufByOpCode(resultBuf, stmt);
+    KVMemFree(stmt, sizeof(QryStmtT));
     return GMERR_OK;
 }
+
+// RUNTIME 模块完成 报文解析 与 报文回填
 
 Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen) {
     switch (opCode) {
     case OP_ADD_TEST:
         return RtHandleAddTest(usrMsg, resultBuf, bufLen);
+    // SIMPLERELATION 入口函数，内部申请stmt
     case OP_SIMREL_CREATE_DB:
     case OP_SIMREL_DROP_DB:
     case OP_SIMREL_CREATE_TABLE:
@@ -130,8 +151,6 @@ Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint3
     case OP_SIMREL_DELETE_DATA:
     case OP_SIMREL_QUERY_DATA:
     case OP_SIMREL_DFX_DB_DESC:
-        // 只需要DbName的走这个分支
-
         return RtHandleSimpleRelOpCode(opCode, usrMsg, resultBuf, bufLen);
     default:
         break;
