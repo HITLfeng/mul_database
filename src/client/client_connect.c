@@ -133,3 +133,96 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
     cbExec(&bufCursor, usrData);
     return GMERR_OK;
 }
+
+void SrParseTable(CliStmtT *stmt, uint8_t **bufCursor) {
+    // 首先解析fieldNum
+    uint32_t fldNum = DeseriUint32M(bufCursor);
+    DB_ASSERT(fldNum > 0);
+
+    // 申请内存
+    CliTableSchemaT *tblSchema = (CliTableSchemaT *)malloc(sizeof(CliTableSchemaT));
+    DB_ASSERT(tblSchema != NULL); // 将来统一整改
+    memset(tblSchema, 0, sizeof(CliTableSchemaT));
+    tblSchema->dbId = stmt->dbId;
+    tblSchema->labelId = stmt->labelId;
+    tblSchema->propertyCnt = fldNum;
+
+    for (uint32_t i = 0; i < fldNum; ++i) {
+        CliPropertyT *property = &tblSchema->properties[i];
+        memset(property, 0, sizeof(CliPropertyT));
+        DeseriStringM(bufCursor, property->fldName);
+        property->type = DeseriUint32M(bufCursor);
+        property->fldSize = DeseriUint32M(bufCursor);
+    }
+    stmt->tableSchema = tblSchema;
+}
+
+void SrParseQueryTblRspCb(uint8_t **respBuf, UsrDataBaseT *result) {
+    DB_POINT2(respBuf, result);
+    // 1.解析服务端返回值
+    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)*respBuf;
+    if (respHead->status != GMERR_OK) {
+        log_error("SrParseQueryTblRspCb error, server status = %d", respHead->status);
+        return;
+    }
+    // 2.解析数据
+    // 服务端返回格式 字段数 | 字段名长度 | 字段名 | 字段类型 | 字段长度 |
+    uint8_t *bufCursor = *respBuf;
+    bufCursor += sizeof(MsgBufResponseHeadT);
+    UsrDataSimpleRelStmtT *srRes = (UsrDataSimpleRelStmtT *)result;
+    srRes->ret = respHead->status;
+    SrParseTable(srRes->stmt, &bufCursor);
+}
+
+CliStatus KVCPrepareStmt(DbConnectT *conn, CliStmtT **stmt, uint32_t dbId, uint32_t labelId) {
+    if (*stmt != NULL) {
+        return GMERR_OK;
+    }
+    *stmt = (CliStmtT *)malloc(sizeof(CliStmtT));
+    if (*stmt == NULL) {
+        log_error("malloc stmt fail. conn is %d.", conn->socketFd);
+        return GMERR_CLIENT_MEMORY_ALLOC_FAILED;
+    }
+    memset(*stmt, 0, sizeof(CliStmtT));
+    (*stmt)->conn = conn;
+    (*stmt)->dbId = dbId;
+    (*stmt)->labelId = labelId;
+    (*stmt)->opCode = OP_SIMREL_QUERY_TABLE;
+
+    // 获取当前表的定义缓存
+    // 申请栈内存
+    MsgBufRequestT msgBuf = {0};
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_QUERY_TABLE);
+
+    // len/dbname
+    char *bufCursor = msgBuf.requestMsg;
+    SeriUint32M((uint8_t **)&bufCursor, dbId);
+    SeriUint32M((uint8_t **)&bufCursor, labelId);
+
+    UsrDataSimpleRelStmtT queryTblRes = {.ret = GMERR_OK, .stmt = *stmt};
+
+    CliStatus ret = KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseQueryTblRspCb, (UsrDataBaseT *)&queryTblRes);
+    if (ret != GMERR_OK) {
+        log_error("CLIENT: create stmt fail.");
+        return ret;
+    }
+    if (queryTblRes.ret != GMERR_OK) {
+        log_error("SERVER: create stmt fail, ret is %u.", queryTblRes.ret);
+        return GMERR_OK;
+    }
+    return GMERR_OK;
+}
+
+CliStatus KVCReleaseStmt(CliStmtT *stmt) {
+    if (stmt == NULL) {
+        return GMERR_OK;
+    }
+    if (stmt->tableSchema != NULL) {
+        free(stmt->tableSchema);
+    }
+    stmt->tableSchema = NULL;
+    stmt->conn = NULL;
+    stmt->dbId = 0;
+    stmt->labelId = 0;
+    free(stmt);
+}

@@ -28,6 +28,10 @@ CliStatus KVCSrvStop(void);
 CliStatus KVCConnect(DbConnectT *conn);
 CliStatus KVCDisconnect(DbConnectT *conn);
 
+// 准备操作句柄函数 配套使用
+CliStatus KVCPrepareStmt(DbConnectT *conn, CliStmtT **stmt, uint32_t dbId, uint32_t labelId);
+CliStatus KVCReleaseStmt(CliStmtT *stmt);
+
 // 收发报文函数
 CliStatus KVCSend(DbConnectT *conn, const MsgBufRequestT *msgBuf);
 CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf);
@@ -56,7 +60,7 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
 CliStatus SRCDeleteLabel(DbConnectT *conn, const char *labelName);
 
 // 插入数据
-CliStatus SRCInsertData(DbConnectT *conn, const char *labelName, const char *key, const char *value);
+CliStatus SRCInsertData(DbConnectT *conn, uint32_t dbId, uint32_t labelId);
 // 查询数据
 CliStatus SRCQueryData(DbConnectT *conn, const char *labelName, const char *key, char *value, uint32_t valueLen);
 // 删除数据

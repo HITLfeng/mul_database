@@ -4,7 +4,6 @@
 // #include "spr_common.h"
 #include "ee_out_function.h"
 
-
 Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     // 序列化格式 int32_t int32_t char
     uint8_t **bufCursor = (uint8_t **)&usrMsg;
@@ -59,6 +58,10 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
         break;
     case OP_SIMREL_QUERY_DATA:
         break;
+    case OP_SIMREL_QUERY_TABLE:
+        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
+        execCtx->labelId = DeseriUint32M((uint8_t **)&bufCursor);
+        break;
     case OP_SIMREL_DFX_DB_DESC:
         execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
         break;
@@ -67,16 +70,32 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
     }
 }
 
+void RtSeriTable(uint8_t **bufCursor, QryStmtT *stmt) {
+    SeriUint32M(bufCursor, stmt->currLabelFldCnt);
+    // printf("label field count is %d\n", stmt->currLabelFldCnt);
+    SrPropertyT *properties = (SrPropertyT *)stmt->retEntry;
+    for (int i = 0; i < stmt->currLabelFldCnt; i++) {
+        SrPropertyT *property = &properties[i];
+        SeriStringM((char **)bufCursor, property->fieldName);
+        // printf("field name is %s\n", property->fieldName);
+        SeriUint32M(bufCursor, (uint32_t)property->fieldType);
+        // printf("field type is %d\n", (uint32_t)property->fieldType);
+        SeriUint32M(bufCursor, property->fieldSize);
+        // printf("field size is %d\n", property->fieldSize);
+    }
+}
+
 void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
+    char *bufCursor = resultBuf;
     switch (stmt->opCode) {
     case OP_SIMREL_CREATE_DB:
-        SeriInt((uint8_t **)&resultBuf, *(uint32_t *)stmt->retEntry);
+        SeriInt((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
         break;
     case OP_SIMREL_DROP_DB:
         break;
     case OP_SIMREL_CREATE_TABLE:
         // labelId
-        SeriInt((uint8_t **)&resultBuf, *(uint32_t *)stmt->retEntry);
+        SeriInt((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
         // 填充 labelJson
         break;
     case OP_SIMREL_DROP_TABLE:
@@ -86,6 +105,9 @@ void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
     case OP_SIMREL_DELETE_DATA:
         break;
     case OP_SIMREL_QUERY_DATA:
+        break;
+    case OP_SIMREL_QUERY_TABLE:
+        RtSeriTable((uint8_t **)&bufCursor, stmt);
         break;
     case OP_SIMREL_DFX_DB_DESC:
         break;
@@ -150,6 +172,7 @@ Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint3
     case OP_SIMREL_INSERT_DATA:
     case OP_SIMREL_DELETE_DATA:
     case OP_SIMREL_QUERY_DATA:
+    case OP_SIMREL_QUERY_TABLE:
     case OP_SIMREL_DFX_DB_DESC:
         return RtHandleSimpleRelOpCode(opCode, usrMsg, resultBuf, bufLen);
     default:

@@ -59,6 +59,26 @@ bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName)
     return false;
 }
 
+SrLabelT *DmGetLabelCtrlByLabelId(SrDbCtrlT *dbCtrl, uint32_t labelId)
+{
+    DB_POINT(dbCtrl);
+    for (uint32_t i = 0; i < DbVectorGetSize(&dbCtrl->labelCtrlList); i++)
+    {
+        SrLabelT *label = (SrLabelT *)DbVectorGetItem(&dbCtrl->labelCtrlList, i);
+        if (label == NULL)
+        {
+            // 理论上不会走到这里
+            log_error("get label failed when IsLabelNameExist.");
+            return false;
+        }
+        if (labelId == label->labelId)
+        {
+            return label;
+        }
+    }
+    return NULL;
+}
+
 bool IsDbNameExist(const char *dbName)
 {
     SrDbCtrlManagerT *dbCtrlManager = GetDbCtrlManager();

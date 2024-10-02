@@ -1,7 +1,9 @@
 #include "ee_out_function.h"
 #include "spr_common.h"
 
-static bool EEIsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT; }
+static bool EEIsSimpleRelOpCode(OperatorCode opCode) {
+    return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT;
+}
 
 Status EEProcessSimpleRelationOpcode(QryStmtT *stmt) {
     switch (stmt->opCode) {
@@ -20,6 +22,9 @@ Status EEProcessSimpleRelationOpcode(QryStmtT *stmt) {
     case OP_SIMREL_DELETE_DATA:
         break;
     case OP_SIMREL_QUERY_DATA:
+        break;
+    case OP_SIMREL_QUERY_TABLE:
+        return DMSrQueryTable(stmt);
         break;
     case OP_SIMREL_DFX_DB_DESC:
         return DMSrGetDbDesc(stmt);

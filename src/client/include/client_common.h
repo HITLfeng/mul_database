@@ -29,9 +29,15 @@ typedef struct UsrDataSimpleRel {
     } srData;
 } UsrDataSimpleRelT;
 
+typedef struct UsrDataSimpleRelStmt {
+    uint32_t ret;
+    CliStmtT *stmt;
+} UsrDataSimpleRelStmtT;
+
 uint8_t *GetUsrDataPosition(uint8_t *usrMsgBuf);
 
-typedef void (*SRParseResponseCb)(uint8_t **, UsrDataBaseT *); // 回调函数， 两个入参分别为 服务端返回报文、用户数据结构体 
+typedef void (*SRParseResponseCb)(uint8_t **,
+                                  UsrDataBaseT *); // 回调函数， 两个入参分别为 服务端返回报文、用户数据结构体
 
 // ************************************
 // 核心函数
@@ -40,6 +46,8 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
                                         UsrDataBaseT *usrData);
 
 void CltParseBaseMsgBuf(MsgBufResponseT *respBuf, UsrDataBaseT *result);
+
+void SRCInitMsgBuf(MsgBufRequestT *msgBuf, OperatorCode opCode);
 
 #ifdef __cplusplus
 }

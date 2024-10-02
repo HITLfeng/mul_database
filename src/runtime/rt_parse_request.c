@@ -44,7 +44,7 @@ void RTProcessMain(char *message, uint32_t str_len)
         RTSetRequestHead(message, ret, NULL, 0);
         return;
     }
-    memset(reslutBuf, BUF_SIZE, 0);
+    memset(reslutBuf, 0, BUF_SIZE);
     ret = RTProcessOpcode(msg_head->opCode, GetUsrMsgBufPostion(message), reslutBuf, BUF_SIZE);
 
     // 3. 设置返回报文信息

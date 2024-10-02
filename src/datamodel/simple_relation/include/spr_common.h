@@ -25,7 +25,7 @@ typedef struct SrDbCtrlManager
 typedef struct SrProperty
 {
     char fieldName[SR_FIELD_NAME_MAX_LENGTH];
-    SrLabelFiledTypeT fieldType;
+    FiledTypeT fieldType;
     uint32_t fieldSize; // 字段长度 只支持定长
 } SrPropertyT;
 
@@ -61,6 +61,8 @@ SrDbCtrlT *DmGetDbCtrlByDbId(uint32_t dbId);
 
 bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName);
 
+SrLabelT *DmGetLabelCtrlByLabelId(SrDbCtrlT *dbCtrl, uint32_t labelId);
+
 // void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
 void DmClearAllLabels(const char *dbName);
 
@@ -70,6 +72,7 @@ Status DMSrCreateTable(QryStmtT *stmt);
 Status DMSrInsertData(QryStmtT *stmt);
 
 Status DMSrGetDbDesc(QryStmtT *stmt);
+Status DMSrQueryTable(QryStmtT *stmt);
 
 
 

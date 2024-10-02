@@ -249,3 +249,32 @@ Status DMSrGetDbDesc(QryStmtT *stmt) {
     }
     return GMERR_OK;
 }
+
+Status DMSrQueryTable(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
+    // 找 dbId 是否存在
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("DMSrCreateTable: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    // 找 labelId 是否存在
+    SrLabelT *labelCtrl = DmGetLabelCtrlByLabelId(dbCtrl, execCtx->labelId);
+    if (labelCtrl == NULL) {
+        log_error("DMSrCreateTable: get labelCtrl failed.");
+        return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
+    }
+    SrPropertyT *properties = (SrPropertyT *)KVMemAlloc(labelCtrl->fieldCnt * sizeof(SrPropertyT));
+    if (properties == NULL) {
+        log_error("DMSrCreateTable: properties alloc failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(properties, 0x00, labelCtrl->fieldCnt * sizeof(SrPropertyT));
+    // 慎用，这里能直接浅拷贝是因为内部没有指针，将来添加指针的话请同步修改
+    memcpy(properties, labelCtrl->properties, labelCtrl->fieldCnt * sizeof(SrPropertyT));
+    stmt->retEntryBufLen = labelCtrl->fieldCnt * sizeof(SrPropertyT);
+    stmt->retEntry = (void *)properties;
+    stmt->currLabelFldCnt = labelCtrl->fieldCnt;
+    return GMERR_OK;
+}
