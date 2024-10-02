@@ -18,7 +18,7 @@ Status EEProcessSimpleRelationOpcode(QryStmtT *stmt) {
     case OP_SIMREL_DROP_TABLE:
         break;
     case OP_SIMREL_INSERT_DATA:
-        // return DMSrInsertData(stmt);
+        return DMSrInsertData(stmt);
     case OP_SIMREL_DELETE_DATA:
         break;
     case OP_SIMREL_QUERY_DATA:

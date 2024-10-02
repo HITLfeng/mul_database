@@ -137,4 +137,44 @@ TEST_F(SimpleRelationTest, TestPrepareStmt)
     free(conn);
 }
 
+TEST_F(SimpleRelationTest, TestInsertData)
+{
+    DbConnectT *conn = (DbConnectT *)malloc(sizeof(DbConnectT));
+    ASSERT_FALSE(conn == NULL);
+    memset(conn, 0, sizeof(DbConnectT));
+
+    ASSERT_EQ(GMERR_OK, KVCConnect(conn));
+
+    // UsrDataSimpleRelT result = {0};
+
+    uint32_t dbId = 0;
+    ASSERT_EQ(GMERR_OK, SRCCreateDb(conn, "db_insert_test", &dbId));
+
+    // 检查结果
+    // EXPECT_EQ(GMERR_OK, result.ret);
+    std::cout << "dbId2: " << dbId << std::endl;
+
+    std::string jsonStr = ReadFileCpp("/root/db/mul_database/test/sdv/01_simple_test/schema/label1.json");
+
+    uint32_t labelId = 0;
+    ASSERT_EQ(GMERR_OK, SRCCreateLabelWithJson(conn, dbId, jsonStr.c_str(), &labelId));
+
+    CliStmt *stmt = NULL;
+    ASSERT_EQ(GMERR_OK, KVCPrepareStmt(conn, &stmt, dbId, labelId));
+
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "libai", 50, "yupaochangjian"));
+
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbao", 5, "xiaoniutuzhuang"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep"));
+    
+    ASSERT_EQ(GMERR_OK, KVCReleaseStmt(stmt));
+
+    ASSERT_EQ(GMERR_OK, SRCTraceDbDesc(conn, dbId));
+
+    ASSERT_EQ(GMERR_OK, SRCDeleteDb(conn, "db_insert_test"));
+
+    ASSERT_EQ(GMERR_OK, KVCDisconnect(conn));
+    free(conn);
+}
+
 

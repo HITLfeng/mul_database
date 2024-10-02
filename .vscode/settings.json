@@ -56,7 +56,10 @@
         "test_common.h": "c",
         "gtest.h": "c",
         "jansson.h": "c",
-        "client_common.h": "c"
+        "client_common.h": "c",
+        "bitset": "c",
+        "algorithm": "c",
+        "typeindex": "c"
     },
     "editor.tokenColorCustomizations": {
         "comments": "#00fc00",

@@ -5,10 +5,12 @@
 #include "../../../common/include/vector_util.h"
 #include "../../../common/include/common.h"
 #include "../../../common/include/kv_memory.h"
+#include "se_out_function.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct SrDbCtrl
 {
     char *dbName;
@@ -27,6 +29,7 @@ typedef struct SrProperty
     char fieldName[SR_FIELD_NAME_MAX_LENGTH];
     FiledTypeT fieldType;
     uint32_t fieldSize; // 字段长度 只支持定长
+    uint32_t fldOffset; // 字段偏移量，用于快速读取buf
 } SrPropertyT;
 
 typedef struct SrLabel
@@ -36,6 +39,7 @@ typedef struct SrLabel
     uint32_t labelId;
     uint32_t fieldCnt;       // feild 个数
     SrPropertyT *properties; // 属性数组
+    FixedHeapT heapRow; // 存储记录数
 } SrLabelT;
 
 

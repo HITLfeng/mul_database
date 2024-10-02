@@ -158,3 +158,82 @@ CliStatus SRCTraceDbDesc(DbConnectT *conn, uint32_t dbId) {
 // 1.初始化requestHeader
 // 2.序列化msgBuf
 // 3.发送并且等待响应 调用回调函数解析响应
+
+// 当前支持的数据类型 int32_t uint32_t string(char *)
+
+static uint32_t GetRecordTotalLen(CliTableSchemaT *tableSchema) {
+    uint32_t totalLen = 0;
+    for (uint32_t i = 0; i < tableSchema->propertyCnt; ++i) {
+        totalLen += tableSchema->properties[i].fldSize;
+    }
+    return totalLen;
+}
+
+void SRCSeriRequsetBuf(uint8_t **bufCursor, CliStmtT *stmt) {
+    // 序列化DBID LABELID 记录总长度
+    SeriUint32M(bufCursor, stmt->dbId);
+    SeriUint32M(bufCursor, stmt->labelId);
+    uint32_t recordTotalLen = GetRecordTotalLen(stmt->tableSchema);
+    SeriUint32M(bufCursor, recordTotalLen);
+    CliTableSchemaT *tableSchema = stmt->tableSchema;
+    for (uint32_t i = 0; i < tableSchema->propertyCnt; ++i) {
+        if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_INT32)
+        {
+            // SeriInt32M(bufCursor, tableSchema->properties[i].value);
+            SeriFixedStringM(bufCursor, tableSchema->properties[i].value, tableSchema->properties[i].fldSize);
+        } else if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_UINT32) {
+            // SeriUint32M(bufCursor, tableSchema->properties[i].value);
+            SeriFixedStringM(bufCursor, tableSchema->properties[i].value, tableSchema->properties[i].fldSize);
+        } else if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_STRING) {
+            // SeriStringM((uint8_t **)bufCursor, tableSchema->properties[i].value); // xiugai 根据固定长度
+            // 为定长数据定制，不序列化长度
+            SeriFixedStringM(bufCursor, tableSchema->properties[i].value, tableSchema->properties[i].fldSize);
+        } else {
+            log_error("CLIENT: SRCSeriRequsetBuf:not support type. type = %d", tableSchema->properties[i].type);
+            return;
+        }
+    }
+}
+
+// 这个函数难度较高
+CliStatus SRCInsertData(CliStmtT *stmt, ...) {
+    DB_POINT2(stmt, stmt->tableSchema);
+    va_list args;
+    va_start(args, stmt); // 从可变参数列表中获取第一个参数 也就是stmt之后
+    CliTableSchemaT *tableSchema = stmt->tableSchema;
+    for (uint32_t i = 0; i < tableSchema->propertyCnt; ++i) {
+        // 用户自己保证传入的内容对的上，否则后果不可预期
+        if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_INT32) {
+            int32_t value = va_arg(args, int32_t);
+            char *pIntBuf = tableSchema->properties[i].value;
+            SeriInt32((uint8_t **)&pIntBuf, value);
+        } else if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_UINT32) {
+            uint32_t value = va_arg(args, uint32_t);
+            char *pUintBuf = tableSchema->properties[i].value;
+            SeriUint32((uint8_t **)&pUintBuf, value);
+        } else if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_STRING) {
+            const char *value = va_arg(args, char *);
+            if (STRLEN(value) > SR_FIELD_VALUE_MAX_LENGTH) {
+                log_error("CLIENT: SRCInsertData: string value too long. value = %s, fieldName = %s", value,
+                          tableSchema->properties[i].fldName);
+                return GMERR_OK;
+            }
+            strcpy(tableSchema->properties[i].value, value);
+        } else {
+            log_error("CLIENT: SRCInsertData:not support type. type = %d", tableSchema->properties[i].type);
+            return GMERR_OK;
+        }
+    }
+    va_end(args);
+
+    // 初始化 requestHeader
+    MsgBufRequestT msgBuf = {0};
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_INSERT_DATA);
+
+    // 序列化 msgBuf.requestMsg
+    char *bufCursor = msgBuf.requestMsg;
+    SRCSeriRequsetBuf((uint8_t **)&bufCursor, stmt);
+
+    // 客户端服务端错误码混合返回
+    return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
+}

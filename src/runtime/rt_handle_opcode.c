@@ -12,20 +12,20 @@ Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
     CalcOptionT argOp = DeseriCharM(bufCursor);
     switch (argOp) {
     case CALC_ADD:
-        SeriInt((uint8_t **)&resultBuf, argL + argR);
+        SeriInt32((uint8_t **)&resultBuf, argL + argR);
         break;
     case CALC_SUB:
-        SeriInt((uint8_t **)&resultBuf, argL - argR);
+        SeriInt32((uint8_t **)&resultBuf, argL - argR);
         break;
     case CALC_MUL:
-        SeriInt((uint8_t **)&resultBuf, argL * argR);
+        SeriInt32((uint8_t **)&resultBuf, argL * argR);
         break;
     case CALC_DIV:
         if (argR == 0) {
             log_error("add test invaild option, option is \\ and argR is 0.");
             return GMERR_ADD_TEST_INVAILD_OPTION;
         }
-        SeriInt((uint8_t **)&resultBuf, argL / argR);
+        SeriInt32((uint8_t **)&resultBuf, argL / argR);
         break;
     default:
         log_error("add test invaild option, option is %c", argOp);
@@ -53,6 +53,13 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
     case OP_SIMREL_DROP_TABLE:
         break;
     case OP_SIMREL_INSERT_DATA:
+        execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
+        execCtx->labelId = DeseriUint32M((uint8_t **)&bufCursor);
+        execCtx->totalFldSize = DeseriUint32M((uint8_t **)&bufCursor);
+        execCtx->insertData = (void *)KVMemAlloc(execCtx->totalFldSize);
+        DB_ASSERT(execCtx->insertData != NULL);
+        memset(execCtx->insertData, 0x00, execCtx->totalFldSize);
+        DeseriFixedStringM((uint8_t **)&bufCursor, execCtx->insertData, execCtx->totalFldSize);
         break;
     case OP_SIMREL_DELETE_DATA:
         break;
@@ -89,13 +96,13 @@ void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
     char *bufCursor = resultBuf;
     switch (stmt->opCode) {
     case OP_SIMREL_CREATE_DB:
-        SeriInt((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
+        SeriInt32((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
         break;
     case OP_SIMREL_DROP_DB:
         break;
     case OP_SIMREL_CREATE_TABLE:
         // labelId
-        SeriInt((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
+        SeriInt32((uint8_t **)&bufCursor, *(uint32_t *)stmt->retEntry);
         // 填充 labelJson
         break;
     case OP_SIMREL_DROP_TABLE:
@@ -154,6 +161,9 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     // Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
     // 根据opCode 填写返回结果
     RtSRSetResultBufByOpCode(resultBuf, stmt);
+    if (execCtx.insertData != NULL) {
+        KVMemFree(execCtx.insertData, execCtx.totalFldSize);
+    }
     KVMemFree(stmt, sizeof(QryStmtT));
     return GMERR_OK;
 }

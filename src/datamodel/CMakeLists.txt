@@ -16,7 +16,10 @@ file(GLOB UTILS_LIB ${CMAKE_CURRENT_SOURCE_DIR}/simple_relation/*.c)
 # file(GLOB UTILS_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/simple_relation/include)
-include_directories(${SERVER_PATH}/common/include)
+include_directories(${COMMON_PATH}/include)
+message(STATUS " STORAGE_PATH include path: ${STORAGE_PATH}/include) ")
+include_directories(${STORAGE_PATH}/include)
+
 
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})

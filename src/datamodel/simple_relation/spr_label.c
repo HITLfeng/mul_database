@@ -182,6 +182,7 @@ Status DMSrCreateTable(QryStmtT *stmt) {
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
     memset(properties, 0x00, memSize);
+    uint32_t fldOffset = 0;
     for (uint32_t i = 0; i < createLabelCtx.fieldCnt; i++) {
         SrPropertyT *property = &properties[i];
         // char *fieldName = (char *)KVMemAlloc(strlen(createLabelCtx.properties[i].fieldName) + 1);
@@ -192,12 +193,18 @@ Status DMSrCreateTable(QryStmtT *stmt) {
         strcpy(property->fieldName, createLabelCtx.properties[i].fieldName);
         property->fieldSize = createLabelCtx.properties[i].fieldSize;
         property->fieldType = createLabelCtx.properties[i].fieldType;
+        property->fldOffset = fldOffset;
+        fldOffset += property->fieldSize;
     }
     labelCtrl.properties = properties;
     labelCtrl.fieldCnt = createLabelCtx.fieldCnt;
     labelCtrl.labelId = GenSrTableId();
     labelCtrl.dbId = execCtx->dbId;
     labelCtrl.labelName = labelName;
+
+    // 申请页存储空间
+    SEFixedHeapInit(&labelCtrl.heapRow, fldOffset);
+    log_debug("debug: server fld total len is %u.", fldOffset);
 
     ret = DbVectorAppendItem(&dbCtrl->labelCtrlList, &labelCtrl);
     if (ret != GMERR_OK) {
@@ -222,6 +229,52 @@ Status DMSrCreateTable(QryStmtT *stmt) {
 
 // Status DMSrInsertData(QryStmtT *stmt){}
 
+// 打印--------------------------------------
+void DmPrintInterval(uint32_t printCnt, const uint32_t printLen) {
+    for (uint32_t i = 0; i < printCnt + 1; ++i) {
+        for (uint32_t j = 0; j < printLen + 1; ++j) {
+            printf("-");
+        }
+    }
+    printf("-\n");
+}
+
+void DmPrintTitle(SrLabelT *labelCtrl) {
+    const char *titleOrder = "order";
+    printf("|%20s", titleOrder);
+    for (uint32_t i = 0; i < labelCtrl->fieldCnt; ++i) {
+        printf("|%20s", labelCtrl->properties[i].fieldName);
+    }
+    printf("|\n");
+}
+
+void DmTraceTableRow(SrLabelT *labelCtrl) {
+    DB_POINT(labelCtrl);
+
+    const uint32_t printLen = 20; // 每格20
+    // 打印标题栏
+    DmPrintInterval(labelCtrl->fieldCnt, printLen);
+    DmPrintTitle(labelCtrl);
+    DmPrintInterval(labelCtrl->fieldCnt, printLen);
+    SrPropertyT *properties = labelCtrl->properties;
+    uint8_t *traceCursor = labelCtrl->heapRow.pageBegin;
+    for (uint32_t i = 0; i < labelCtrl->heapRow.rowCnt; ++i) {
+        printf("|%20u", i + 1);
+        for (uint32_t j = 0; j < labelCtrl->fieldCnt; ++j) {
+            if (properties[j].fieldType == SR_LABEL_FILED_TYPE_INT32) {
+                printf("|%20d", *(int32_t *)(traceCursor + properties[j].fldOffset));
+            } else if (properties[j].fieldType == SR_LABEL_FILED_TYPE_UINT32) {
+                printf("|%20u", *(uint32_t *)(traceCursor + properties[j].fldOffset));
+            } else if (properties[j].fieldType == SR_LABEL_FILED_TYPE_STRING) {
+                printf("|%20s", (char *)traceCursor + properties[j].fldOffset);
+            }
+        }
+        printf("|\n");
+        DmPrintInterval(labelCtrl->fieldCnt, printLen);
+        traceCursor += labelCtrl->heapRow.rowSize;
+    }
+}
+
 Status DMSrGetDbDesc(QryStmtT *stmt) {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
@@ -231,21 +284,24 @@ Status DMSrGetDbDesc(QryStmtT *stmt) {
     }
 
     // 打印表的个数
-    printf("查询数据库ID为:%u\n", execCtx->dbId);
+    printf("查询数据库ID为:%u ", execCtx->dbId);
     printf("数据库中表的数量为:%u\n", DbVectorGetSize(&dbCtrl->labelCtrlList));
     for (uint32_t i = 0; i < DbVectorGetSize(&dbCtrl->labelCtrlList); i++) {
         SrLabelT *labelCtrl = (SrLabelT *)DbVectorGetItem(&dbCtrl->labelCtrlList, i);
         printf("第%d个表的信息为:\n", i);
-        printf("表ID为:%u\n", labelCtrl->labelId);
-        printf("表名称为:%s\n", labelCtrl->labelName);
-        printf("表中字段的数量为:%u\n", labelCtrl->fieldCnt);
+        printf("表ID为:%u ", labelCtrl->labelId);
+        printf("表名称为:%s ", labelCtrl->labelName);
+        printf("表中字段的数量为:%u\n ", labelCtrl->fieldCnt);
         for (uint32_t j = 0; j < labelCtrl->fieldCnt; j++) {
             SrPropertyT *property = &labelCtrl->properties[j];
-            printf("第%d个字段的信息为:\n", j);
-            printf("字段名称为:%s ", property->fieldName);
-            printf("字段类型为:%u ", property->fieldType);
-            printf("字段大小为:%u\n", property->fieldSize);
+            printf("%d:", j + 1);
+            printf("名称:%s ", property->fieldName);
+            printf("类型:%u ", property->fieldType);
+            printf("大小:%u\n", property->fieldSize);
         }
+        printf("*******************************\n");
+        DmTraceTableRow(labelCtrl);
+        printf("*******************************\n");
     }
     return GMERR_OK;
 }
@@ -276,5 +332,25 @@ Status DMSrQueryTable(QryStmtT *stmt) {
     stmt->retEntryBufLen = labelCtrl->fieldCnt * sizeof(SrPropertyT);
     stmt->retEntry = (void *)properties;
     stmt->currLabelFldCnt = labelCtrl->fieldCnt;
+    return GMERR_OK;
+}
+
+Status DMSrInsertData(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
+    // 找 dbId 是否存在
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("DMSrInsertData: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    // 找 labelId 是否存在
+    SrLabelT *labelCtrl = DmGetLabelCtrlByLabelId(dbCtrl, execCtx->labelId);
+    if (labelCtrl == NULL) {
+        log_error("DMSrInsertData: get labelCtrl failed.");
+        return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
+    }
+
+    SEFixedHeapInsertRow(&labelCtrl->heapRow, execCtx->insertData);
     return GMERR_OK;
 }

@@ -11,12 +11,13 @@ extern "C" {
 
 // SR 字段名长度
 #define SR_FIELD_NAME_MAX_LENGTH 64
-// SR 字段个数
+// SR 字段个数 ******************************
 #define SR_LABEL_MAX_FILED_CNT 30
 #define SR_DB_NAME_MAX_LENGTH 128
 #define SR_LABEL_NAME_MAX_LENGTH 128
+// 每个字段数据最大长度
 #define SR_FIELD_VALUE_MAX_LENGTH 64
-// json报文最大允许长度2M
+// json报文最大允许长度2M ********************
 #define SR_LABEL_JSON_MAX_LENGTH 2048
 
 typedef enum OperatorCode {
@@ -91,6 +92,8 @@ typedef struct SimpleRelExecCtx {
     char dbName[SR_DB_NAME_MAX_LENGTH];
     char labelName[SR_LABEL_NAME_MAX_LENGTH];
     char labelJson[SR_LABEL_JSON_MAX_LENGTH];
+    void *insertData; // 待插入数据
+    uint32_t totalFldSize; // 字段总长度
 } SimpleRelExecCtxT;
 
 typedef struct RunCtx {

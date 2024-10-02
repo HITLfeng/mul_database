@@ -10,7 +10,7 @@ void SeriCharM(uint8_t **bufCursor, char value)
     *bufCursor += sizeof(char);
 }
 
-void SeriIntM(uint8_t **bufCursor, int32_t value)
+void SeriInt32M(uint8_t **bufCursor, int32_t value)
 {
     *((int32_t *)(*bufCursor)) = value;
     *bufCursor += sizeof(int32_t);
@@ -29,6 +29,13 @@ void SeriStringM(char **bufCursor, const char *value)
     *bufCursor += sizeof(uint32_t);
     memcpy(*bufCursor, value, strLen);
     *bufCursor += strLen;
+}
+
+void SeriFixedStringM(uint8_t **bufCursor, const char *value, uint32_t fixLen)
+{
+    uint32_t strLen = strlen(value);
+    memcpy(*bufCursor, value, strLen);
+    *bufCursor += fixLen;
 }
 
 // 反序列化
@@ -61,6 +68,13 @@ void DeseriStringM(uint8_t **bufCursor, char *value)
     *bufCursor += strLen;
 }
 
+// 请使用fixLen大小value来接收反序列化结果！
+void DeseriFixedStringM(uint8_t **bufCursor, char *value, uint32_t fixLen)
+{
+    memcpy(value, *bufCursor, fixLen);
+    *bufCursor += fixLen;
+}
+
 // ******************************************************
 // 不移动位置
 // ******************************************************
@@ -71,7 +85,7 @@ void SeriChar(uint8_t **bufCursor, char value)
     *((char *)(*bufCursor)) = value;
 }
 
-void SeriInt(uint8_t **bufCursor, int32_t value)
+void SeriInt32(uint8_t **bufCursor, int32_t value)
 {
     *((int32_t *)(*bufCursor)) = value;
 }
@@ -79,6 +93,16 @@ void SeriInt(uint8_t **bufCursor, int32_t value)
 void SeriUint32(uint8_t **bufCursor, uint32_t value)
 {
     *((uint32_t *)(*bufCursor)) = value;
+}
+
+void SeriString(char **bufCursor, const char *value)
+{
+    char *tmpBufCursor = *bufCursor;
+    uint32_t strLen = strlen(value);
+    *((uint32_t *)(tmpBufCursor)) = strLen;
+    tmpBufCursor += sizeof(uint32_t);
+    memcpy(tmpBufCursor, value, strLen);
+    tmpBufCursor += strLen;
 }
 
 // 反序列化

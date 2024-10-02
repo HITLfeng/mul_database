@@ -16,6 +16,7 @@ file(GLOB UTILS_LIB ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 # file(GLOB UTILS_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${COMMON_PATH}/include)
 
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})

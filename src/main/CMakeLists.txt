@@ -18,6 +18,9 @@ file(GLOB UTILS_LIB ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${RUNTIME_PATH}/include)
 include_directories(${INTERFACE_PATH}/include)
+include_directories(${STORAGE_PATH}/include)
+include_directories(${COMMON_PATH}/include)
+
 message(STATUS "include path: ${RUNTIME_PATH}/include")
 
 # 设置动态库生成路径
@@ -34,5 +37,5 @@ set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
 # message("JANSSON_LIBRARY: ${JANSSON_LIBRARY}")
 add_executable(kvserver server_main.c)
 
-target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel kvexector ${JANSSON_LIBRARY})
+target_link_libraries(kvserver pthread kvcommon kvruntime kvdatamodel kvexector kvstorage ${JANSSON_LIBRARY})
 # target_link_libraries(kvserver pthread kvcommon kvinterface kvruntime kvstorage)

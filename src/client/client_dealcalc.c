@@ -12,8 +12,8 @@
 void SetCalcUsrMsgBuf(char *usrMsgBuf, int x, int y, CalcOptionT opt)
 {
     uint8_t *bufCursor = (uint8_t *)usrMsgBuf;
-    SeriIntM(&bufCursor, x);
-    SeriIntM(&bufCursor, y);
+    SeriInt32M(&bufCursor, x);
+    SeriInt32M(&bufCursor, y);
     SeriCharM(&bufCursor, opt);
 }
 

@@ -2,6 +2,7 @@
 #define __OUT_FUNCTION_H__
 
 #include "out_type_defs.h"
+#include <stdarg.h>
 
 typedef uint32_t CliStatus;
 
@@ -60,7 +61,9 @@ CliStatus SRCCreateLabelWithJson(DbConnectT *conn, uint32_t dbId, const char *la
 CliStatus SRCDeleteLabel(DbConnectT *conn, const char *labelName);
 
 // 插入数据
-CliStatus SRCInsertData(DbConnectT *conn, uint32_t dbId, uint32_t labelId);
+CliStatus SRCInsertData(CliStmtT *stmt, ...);
+
+
 // 查询数据
 CliStatus SRCQueryData(DbConnectT *conn, const char *labelName, const char *key, char *value, uint32_t valueLen);
 // 删除数据

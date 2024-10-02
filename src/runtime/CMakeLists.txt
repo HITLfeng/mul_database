@@ -23,6 +23,8 @@ include_directories(${COMMON_PATH}/include)
 message(${COMMON_PATH}/include)
 include_directories(${EXECTOR_PATH}/include)
 message(${EXECTOR_PATH}/include)
+include_directories(${STORAGE_PATH}/include)
+message(${STORAGE_PATH}/include)
 
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
