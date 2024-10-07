@@ -213,16 +213,18 @@ CliStatus KVCPrepareStmt(DbConnectT *conn, CliStmtT **stmt, uint32_t dbId, uint3
     return GMERR_OK;
 }
 
-CliStatus KVCReleaseStmt(CliStmtT *stmt) {
-    if (stmt == NULL) {
+CliStatus KVCReleaseStmt(CliStmtT **stmt) {
+    if ((*stmt) == NULL) {
         return GMERR_OK;
     }
-    if (stmt->tableSchema != NULL) {
-        free(stmt->tableSchema);
+    if ((*stmt)->tableSchema != NULL) {
+        free((*stmt)->tableSchema);
     }
-    stmt->tableSchema = NULL;
-    stmt->conn = NULL;
-    stmt->dbId = 0;
-    stmt->labelId = 0;
-    free(stmt);
+    (*stmt)->tableSchema = NULL;
+    (*stmt)->conn = NULL;
+    (*stmt)->dbId = 0;
+    (*stmt)->labelId = 0;
+    free((*stmt));
+    (*stmt) = NULL;
+    return GMERR_OK;
 }

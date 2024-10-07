@@ -1,0 +1,25 @@
+{
+    "labelName": "usr",
+    "fields": [
+        {
+            "name": "name",
+            "type": "string",
+            "size": 20
+        },
+        {
+            "name": "age",
+            "type": "uint32",
+            "size": 4
+        },
+        {
+            "name": "address",
+            "type": "string",
+            "size": 20
+        },
+        {
+            "name": "luck",
+            "type": "int",
+            "size": 4
+        }
+    ]
+}

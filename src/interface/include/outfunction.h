@@ -31,7 +31,7 @@ CliStatus KVCDisconnect(DbConnectT *conn);
 
 // 准备操作句柄函数 配套使用
 CliStatus KVCPrepareStmt(DbConnectT *conn, CliStmtT **stmt, uint32_t dbId, uint32_t labelId);
-CliStatus KVCReleaseStmt(CliStmtT *stmt);
+CliStatus KVCReleaseStmt(CliStmtT **stmt);
 
 // 收发报文函数
 CliStatus KVCSend(DbConnectT *conn, const MsgBufRequestT *msgBuf);
