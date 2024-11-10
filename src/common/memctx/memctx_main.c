@@ -12,7 +12,7 @@
  *
  */
 
-#define MEM_DEBUG 1
+#define MEM_DEBUG 0
 
 #define MEM_PAGE_SIZE 4096
 // 初始的分配的页的数量  256 页
@@ -61,7 +61,7 @@ struct DbMemCtx {
     DbMemCtxT *parentMemCtx; // 指向父节点的memCtx
     DbMemCtxT *childMemCtx[MEM_MAX_CHILD_NUM]; // 指向孩子节点的memCtx
     uint32_t childNum; // 该层直属的孩子节点个数
-    void *bigMemAllocList[]; // 大块内存申请链表
+    void *bigMemAllocList[MEM_BIG_ALLOC_MAX_COUNT]; // 大块内存申请链表
     uint32_t bigMemAllocCnt; // 大块内存申请数量
     DbMemPageT *fixSizeLevelList[MEM_FIX_SIZE_LEVEL]; // 层级 4 8 16 32 64 128 256 512 1024
 };
@@ -108,10 +108,11 @@ void DbInitFreeList(DbMemPageT *freePageList, uint32_t pageCnt, void *pageAddr) 
         DbMemPageT *freePage = &freePageList[i];
         freePage->pageIdx = i;
         freePage->pageAddr = (uint8_t *) pageAddr + i * MEM_PAGE_SIZE;
-        freePage->nextPageAddr = i == pageCnt - 1 ? NULL : (uint8_t *) pageAddr + (i + 1) * MEM_PAGE_SIZE;
-        freePage->nextFreeAddrInPage = pageAddr;
-        freePage->pageSlotAllocSize = 0;
+        freePage->nextPageAddr = i == pageCnt - 1 ? NULL : (uint8_t *) freePage + sizeof(DbMemPageT);
+        // freePage->nextFreeAddrInPage = pageAddr;
+        // freePage->pageSlotAllocSize = 0;
         freePage->pageType = PAGE_FIX_ALLOC;
+        freePage->fixPage = (DbMemFixPageSplitT){0};
     }
 }
 
@@ -120,7 +121,7 @@ void DbInitFreeList(DbMemPageT *freePageList, uint32_t pageCnt, void *pageAddr) 
 // ************************************************************************************
 
 
-void DbMemCtxTrace(DbMemCtxManagerT *memCtxManager)
+void DbMemCtxMgrTrace(DbMemCtxManagerT *memCtxManager)
 {
     if (!MEM_DEBUG) {
         return;
@@ -138,33 +139,6 @@ void DbMemCtxTrace(DbMemCtxManagerT *memCtxManager)
         log_trace("    freePage->nextPageAddr = %p.", freePage->nextPageAddr);
         freePage = freePage->nextPageAddr;
     }
-
-}
-
-// ************************************************************************************
-// ********************   trace *******************************************************
-// ************************************************************************************
-
-
-void DbMemCtxTrace(DbMemCtxManagerT *memCtxManager)
-{
-    if (!MEM_DEBUG) {
-        return;
-    }
-    log_trace("memCtxManager->totalAllocSize = %u.", memCtxManager->totalAllocSize);
-    log_trace("memCtxManager->initPageSize = %u.", memCtxManager->initPageSize);
-    log_trace("memCtxManager->initPageCnt = %u.", memCtxManager->initPageCnt);
-    log_trace("memCtxManager->topMemCtx = %p.", memCtxManager->topMemCtx);
-    DbMemCtxT *memCtx = memCtxManager->topMemCtx;
-    log_trace("memCtx->freePageCnt = %u.", memCtx->freePageCnt);
-    DbMemPageT *freePage = memCtx->freePageList;
-    while (freePage != NULL) {
-        log_trace("freePage->pageIdx = %u.", freePage->pageIdx);
-        log_trace("    freePage->pageAddr = %p.", freePage->pageAddr);
-        log_trace("    freePage->nextPageAddr = %p.", freePage->nextPageAddr);
-        freePage = freePage->nextPageAddr;
-    }
-
 }
 
 /*
@@ -232,6 +206,7 @@ Status DbInitMemManager() {
         DbFree(memCtxManager);
         return ret;
     }
+    DbMemCtxMgrTrace(memCtxManager);
     return GMERR_OK;
 }
 
@@ -278,16 +253,16 @@ Status DbGetFreePageFromParent(DbMemCtxT *memCtx, DbMemCtxT *getPageMemCtx) {
  * @param childMemCtx
  * @return
  */
-Status DbCreateMemCtx(DbMemCtxT *memCtx, DbMemCtxT **childMemCtx) {
-    DB_POINT2(memCtx, childMemCtx);
-    Status ret = GMERR_OK;
-    if (memCtx->freePageCnt == 0) {
-        ret = DbGetFreePageFromParent();
-        // 找父节点要
+// Status DbCreateMemCtx(DbMemCtxT *memCtx, DbMemCtxT **childMemCtx) {
+//     DB_POINT2(memCtx, childMemCtx);
+//     Status ret = GMERR_OK;
+//     if (memCtx->freePageCnt == 0) {
+//         ret = DbGetFreePageFromParent();
+//         // 找父节点要
 
-    }
+//     }
 
-}
+// }
 
 uint32_t DbGetFixSizeLevel(uint32_t allocSize) {
     DB_ASSERT(allocSize > 0 && allocSize <= MEM_BIG_ALLOC_SIZE);
@@ -444,8 +419,9 @@ void *DbDynMemCtxAlloc(DbMemCtxT *memCtx, uint32_t allocSize) {
     if (allocSize > MEM_BIG_ALLOC_SIZE) {
         void *pMem = DbMalloc(allocSize);
         if (pMem == NULL) {
-            log_error("malloc error when DbDynMemCtxAlloc. alloc size is %u.", allocSize);
-            return GMERR_MEMORY_ALLOC_FAILED;
+            ret = GMERR_MEMORY_ALLOC_FAILED;
+            log_error("malloc error when DbDynMemCtxAlloc. alloc size is %u. ret is %u.", allocSize, ret);
+            return NULL;
         }
         memset(pMem, 0x00, allocSize);
         memCtx->bigMemAllocList[memCtx->bigMemAllocCnt] = pMem;
@@ -465,7 +441,7 @@ void *DbDynMemCtxAlloc(DbMemCtxT *memCtx, uint32_t allocSize) {
 
     // addr地址
     void *slotAddr = NULL;
-    if (!DbHasPageInSlot(levelIdx)) {
+    if (!DbHasPageInSlot(memCtx, levelIdx)) {
         ret = DbMemGetAndSplitPage(memCtx, levelIdx);
         if (ret != GMERR_OK) {
             return NULL;
