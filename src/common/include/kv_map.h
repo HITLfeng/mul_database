@@ -10,11 +10,13 @@ extern "C" {
 // HASHMAP
 typedef int32_t (*HashCodeFuncT)(void *key);
 
-typedef struct DbBucket {
+typedef struct DbBucket DbBucketT;
+
+struct DbBucket {
     void *key;
     void *value;
     DbBucketT *next; // 冲突链表
-} DbBucketT;
+};
 
 typedef struct DbHashMap {
     DbBucketT *buckets; // 存储区域
@@ -31,7 +33,7 @@ int32_t DbHashInt32(void *key) {
     return hashCode;
 }
 
-Status DbCreateHashMap(DbHashMapT **map, HashCodeFuncT hashFunc);
+void DbCreateHashMap(DbHashMapT **map, HashCodeFuncT hashFunc);
 
 // Status DbMapInsert();
 

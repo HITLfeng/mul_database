@@ -84,6 +84,13 @@ Status MainWorkerStart()
         return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
     }
 
+    // 初始化 memctx 后续替代内存池
+    if (DbInitMemManager() != GMERR_OK)
+    {
+        log_error("MainWorkerStart, DbInitMemManager failed");
+        return GMERR_STORAGE_MEMCTX_INIT_FAILED;
+    }
+
     while (1)
     {
         clnt_addr_size = sizeof(clnt_addr);
