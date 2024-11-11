@@ -1,5 +1,22 @@
 #include "main_worker.h"
 
+#define MEMCTX_TEST_ON 1
+#if MEMCTX_TEST_ON
+// *******************
+// debug memCtx
+void TestBasicAlloc(){
+    void *ptr1 = DbDynMemCtxAlloc(NULL, 14);
+    void *ptr2 = DbDynMemCtxAlloc(NULL, 14);
+    for (uint32_t i = 1; i < 1024; i++) {
+        DbDynMemCtxAlloc(NULL, i);
+    }
+    DbDynMemCtxFree(NULL, ptr2);
+}
+
+// debug memCtx
+// *******************
+#endif
+
 void *client_handler(void *arg) {
     int clnt_sock = *((int *)arg);
     // 用户有效报文长度不超过1024
@@ -75,11 +92,18 @@ Status MainWorkerStart() {
         return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
     }
 
+
     // 初始化 memctx 后续替代内存池
     if (DbInitMemManager() != GMERR_OK) {
         log_error("MainWorkerStart, DbInitMemManager failed");
         return GMERR_STORAGE_MEMCTX_INIT_FAILED;
     }
+
+#if MEMCTX_TEST_ON
+    TestBasicAlloc();
+#endif
+
+
 
     while (1) {
         clnt_addr_size = sizeof(clnt_addr);

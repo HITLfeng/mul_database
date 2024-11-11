@@ -486,6 +486,9 @@ void DbDynFreeInPage(DbMemPageT *page, void *ptr) {
  * 释放内存
  */
 void DbDynMemCtxFree(DbMemCtxT *memCtx, void *ptr) {
+    if (memCtx == NULL) {
+        memCtx = DbGetTopMemCtx();
+    }
     // 效率低下！
     for (uint32_t i = 0; i < MEM_FIX_SIZE_LEVEL; ++i) {
         if (memCtx->fixSizeLevelList[i] == NULL) {
@@ -500,6 +503,7 @@ void DbDynMemCtxFree(DbMemCtxT *memCtx, void *ptr) {
         // 找到了
         DbDynFreeInPage(targetPage, ptr);
         log_trace("ptr %p release success, page idx is %u.", ptr, targetPage->pageIdx);
+        return;
     }
     // 没找到 遍历大对象列表
     for (uint32_t i = 0; i < memCtx->bigMemAllocCnt; ++i) {
@@ -514,6 +518,7 @@ void DbDynMemCtxFree(DbMemCtxT *memCtx, void *ptr) {
         }
         memCtx->bigMemAllocCnt--;
         log_trace("ptr %p release success, big alloc idx is %u.", ptr, i);
+        return;
     }
     log_error("memctx dont match this ptr!");
     DB_ASSERT(false);
