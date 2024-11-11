@@ -1,20 +1,17 @@
 #include "main_worker.h"
 
-void *client_handler(void *arg)
-{
+void *client_handler(void *arg) {
     int clnt_sock = *((int *)arg);
     // 用户有效报文长度不超过1024
     char message[sizeof(MsgBufRequestT)];
     int str_len;
     log_info("thread id: %d is deal with client %d\n", pthread_self(), clnt_sock);
 
-    while (true)
-    {
+    while (true) {
         memset(message, 0, sizeof(MsgBufRequestT));
         // 接收客户端发送的消息
         str_len = read(clnt_sock, message, sizeof(MsgBufRequestT));
-        if (str_len == 0)
-        {
+        if (str_len == 0) {
             log_info("thread id: %d msg -- client %d closed connection\n", pthread_self(), clnt_sock);
             // 客户端关闭连接
             close(clnt_sock);
@@ -32,8 +29,7 @@ void *client_handler(void *arg)
         // fgets(message, sizeof(MsgBufRequestT), stdin);
         // str_len = strlen(message);
         int sendRet = write(clnt_sock, message, sizeof(MsgBufResponseT));
-        if (sendRet == -1)
-        {
+        if (sendRet == -1) {
             log_error("thread id: %d msg -- send msg to client %d failed\n", pthread_self(), clnt_sock);
             // 客户端关闭连接
             close(clnt_sock);
@@ -44,16 +40,14 @@ void *client_handler(void *arg)
     return NULL;
 }
 
-Status MainWorkerStart()
-{
+Status MainWorkerStart() {
     int serv_sock, clnt_sock;
     struct sockaddr_in serv_addr, clnt_addr;
     socklen_t clnt_addr_size;
 
     // 创建socket对象
     serv_sock = socket(PF_INET, SOCK_STREAM, 0);
-    if (serv_sock == -1)
-    {
+    if (serv_sock == -1) {
         log_error("MainWorkerStart, get socket error");
         return GMERR_SOCKET_FAILED;
     }
@@ -64,46 +58,41 @@ Status MainWorkerStart()
     serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
     serv_addr.sin_port = htons(12345);
 
-    if (bind(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
-    {
+    if (bind(serv_sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1) {
         log_error("MainWorkerStart, bind socket error");
         return GMERR_SOCKET_FAILED;
     }
 
     // 开始监听
-    if (listen(serv_sock, 5) == -1)
-    {
+    if (listen(serv_sock, 5) == -1) {
         log_error("MainWorkerStart, listen socket error");
         return GMERR_SOCKET_FAILED;
     }
 
     // 初始化内存池
-    if (KVMemoryPoolInit() != GMERR_OK)
-    {
+    if (KVMemoryPoolInit() != GMERR_OK) {
         log_error("MainWorkerStart, KVMemoryPoolInit failed");
         return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
     }
 
     // 初始化 memctx 后续替代内存池
-    if (DbInitMemManager() != GMERR_OK)
-    {
+    if (DbInitMemManager() != GMERR_OK) {
         log_error("MainWorkerStart, DbInitMemManager failed");
         return GMERR_STORAGE_MEMCTX_INIT_FAILED;
     }
 
-    while (1)
-    {
+    while (1) {
         clnt_addr_size = sizeof(clnt_addr);
         // 接受客户端连接请求
         clnt_sock = accept(serv_sock, (struct sockaddr *)&clnt_addr, &clnt_addr_size);
-        if (clnt_sock == -1)
-        {
+        if (clnt_sock == -1) {
             log_error("MainWorkerStart, accept socket error");
             return GMERR_SOCKET_FAILED;
         }
 
         // 创建新线程处理客户端请求
-        log_info("MainWorkerStart, new client connected, client ip: %s, port: %d", inet_ntoa(clnt_addr.sin_addr), ntohs(clnt_addr.sin_port));
+        log_info("MainWorkerStart, new client connected, client ip: %s, port: %d", inet_ntoa(clnt_addr.sin_addr),
+                 ntohs(clnt_addr.sin_port));
         pthread_t t_id;
         pthread_create(&t_id, NULL, client_handler, (void *)&clnt_sock);
         pthread_detach(t_id); // 分离线程，使其结束后自动回收资源
