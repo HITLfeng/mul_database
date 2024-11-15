@@ -210,7 +210,9 @@ Status DbInitTopMemCtx(DbMemCtxManagerT *memCtxManager) {
  * 服务器启动时初始化 g_memCtxManager
  */
 Status DbInitMemManager() {
-    uint32_t allocSize = (uint32_t)sizeof(DbMemCtxManagerT);
+    uint32_t
+    allocSize = (uint32_t)
+    sizeof(DbMemCtxManagerT);
     DbMemCtxManagerT *memCtxManager = (DbMemCtxManagerT *) DbMalloc(allocSize);
     if (memCtxManager == NULL) {
         log_error("malloc error when DbInitMemManager. alloc size is %u.", allocSize);
@@ -353,7 +355,7 @@ Status DbAllocPageFromCurrMemCtx(DbMemCtxT *memCtx, DbMemPageT **page) {
 }
 
 /**
- * 清空页
+ * 清空页,包括管理结构、慎用
  * @param page
  */
 void DbMemResetPage(DbMemPageT *page) { memset(page, 0x00, MEM_PAGE_SIZE); }
@@ -645,5 +647,134 @@ Status DbCreateMemCtx(DbMemCtxT *memCtx, const char *name, DbMemCtxT **childMemC
     memCtx->childMemCtx[memCtx->childNum] = newMemCtx;
     memCtx->childNum++;
     *childMemCtx = newMemCtx;
+    return GMERR_OK;
+}
+
+
+
+
+// 20241114 TODO:
+/*
+ * 1. 拆分文件 trace util mainfunc
+ * 2. 考虑重构页 不从freelist中剔除，而是标记删除
+ * 3. DbMemCtxReset 和 DbMemCtxDelete 尽快完善 闭环 memCtx 特性 SR！
+ */
+
+// 该函数不能修改 currPage->nextPageAddr
+typedef (void)(*HandlerPage)(
+DbMemPageT *page
+);
+
+void DbMemCtxDealPageList(DbMemPageT *pageList, HandlerPage handler) {
+    DbMemPageT *currPage = pageList;
+    while (currPage != NULL) {
+        handler(currPage);
+        currPage = currPage->nextPageAddr;
+    }
+}
+
+void ResetSinglePage(DbMemPageT *page) {
+    DB_POINT(page);
+    page->isPageInitByFixSize = false;
+    page->fixPage.headAddr = NULL;
+    page->fixPage.nextFreeAddrInPage = NULL;
+    page->fixPage.pageFreeSlotCnt = PAGE_INVAILD_VALUE;
+    page->fixPage.pageTotalSlotCnt = PAGE_INVAILD_VALUE;
+    page->fixPage.pageSlotAllocSize = PAGE_INVAILD_VALUE;
+}
+
+uint32_t GetPageListLength(DbMemPageT *pageList) {
+    if (pageList == NULL) {
+        return 0;
+    }
+    uint32_t length = 0;
+    DbMemPageT *currPage = pageList;
+    while (currPage != NULL) {
+        currPage = currPage->nextPageAddr;
+        ++length;
+    }
+    return length;
+}
+
+void PageListHeadInsert(DbMemPageT *pageList, DbMemCtxT *memCtx) {
+    DB_POINT(pageList);
+    memCtx->freePageCnt += GetPageListLength(pageList);
+    // find last page
+    DbMemPageT *currPage = pageList;
+    while (currPage->nextPageAddr != NULL) {
+        currPage = currPage->nextPageAddr;
+    }
+    currPage->nextPageAddr = memCtx->freePageList;
+    memCtx->freePageList = pageList;
+}
+
+
+/**
+ * 将当前memCtx内申请的内存全部释放，不会影响子节点！
+ * @param memCtx 要reset的memCtx
+ */
+void DbMemCtxReset(DbMemCtxT *memCtx) {
+    // 遍历 每个槽位
+    for (uint32_t i = 0; i < MEM_FIX_SIZE_LEVEL; ++i) {
+        DbMemPageT *pageList = memCtx->fixSizeLevelList[i];
+        if (pageList == NULL) {
+            continue;
+        }
+
+        // 单个槽位的页、全部释放 reset page
+        DbMemCtxDealPageList(pageList, ResetSinglePage);
+        // 将当前页挂载到freeList
+        PageListHeadInsert(pageList, memCtx);
+    }
+    // 遍历所有大对象
+    for (uint32_t i = 0; i < memCtx->bigMemAllocCnt; ++i) {
+        DbFree(memCtx->bigMemAllocList[i]);
+    }
+    memCtx->bigMemAllocCnt = 0;
+}
+
+
+void DbMemCtxDeleteInner(DbMemCtxT *memCtx) {
+    for (uint32_t i = 0; i < memCtx->childNum; ++i) {
+        DbMemCtxT *childMemCtx = memCtx->childMemCtx[i];
+        DbMemCtxDeleteInner(memCtx);
+    }
+    // find leaf memctx node
+    DbMemCtxReset(memCtx);
+    uint32_t freePageCnt = GetPageListLength(memCtx);
+    DB_ASSERT(freePageCnt == memCtx->freePageCnt);
+    // 将全部页上交给父节点
+    DbMemCtxT *parentMemCtx = memCtx->parentMemCtx;
+    PageListHeadInsert(memCtx->freePageList, parentMemCtx);
+    DbDynMemCtxFree(parentMemCtx, memCtx);
+}
+
+/**
+ * 一把级联删除当前memCtx以及所有的子节点 暂不支持对顶层memCtx进行此操作！
+ * @param memCtx
+ */
+Status DbMemCtxDelete(DbMemCtxT *memCtx) {
+    // 复杂
+    if (DbIsTopMemCtx(memCtx)) {
+        log_error("top memCtx is not allowed to delete.");
+        return GMERR_MEMCTX_OPERATOR_ILLEGAL;
+    }
+    DbMemCtxT *parentMemCtx = memCtx->parentMemCtx;
+    uint32_t i = 0;
+    for (; i < parentMemCtx->childNum; ++i) {
+        if (parentMemCtx->childMemCtx[i] == memCtx) {
+            // find
+            break;
+        }
+    }
+    if (i < parentMemCtx->childNum) {
+        for (uint32_t j = i; j < parentMemCtx->childNum - 1; ++j) {
+            parentMemCtx->childMemCtx[j] = parentMemCtx->childMemCtx[j + 1];
+        }
+        DbMemCtxDeleteInner(memCtx);
+    } else {
+        log_error("delete failed and curr memctx is not a invaild tree.");
+        return GMERR_MEMCTX_TREE_INVAILD;
+    }
     return GMERR_OK;
 }
