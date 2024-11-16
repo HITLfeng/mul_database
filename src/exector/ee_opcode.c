@@ -5,6 +5,11 @@ static bool EEIsSimpleRelOpCode(OperatorCode opCode) {
     return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT;
 }
 
+inline bool EEIsSysviewOpCode(OperatorCode opCode)
+{
+    return opCode >= OP_SYSVIEW_EDIT && opCode < OP_SYSVIEW_END;
+}
+
 Status EEProcessSimpleRelationOpcode(QryStmtT *stmt) {
     switch (stmt->opCode) {
     case OP_SIMREL_CREATE_DB:
@@ -33,12 +38,25 @@ Status EEProcessSimpleRelationOpcode(QryStmtT *stmt) {
     }
 }
 
+Status EEProcessSysviewOpcode(QryStmtT *stmt)
+{
+    switch (stmt->opCode) {
+        case OP_SYSVIEW_EDIT:
+            return DMSrCreateDb(stmt);
+        default:
+            break;
+    }
+}
+
 Status EEProcessRuntimeOpCode(QryStmtT *stmt) {
     OperatorCode opCode = stmt->opCode;
     if (EEIsSimpleRelOpCode(opCode)) {
         return EEProcessSimpleRelationOpcode(stmt);
-    } else {
+    } else if (EEIsSysviewOpCode(opCode)) {
         // 待拓展
+        return EEProcessSysviewOpcode(stmt);
+    } else {
+
     }
     log_error("EE process runtime opcode %d error.", opCode);
     return GMERR_EE_UNKNOWN_OPCODE;

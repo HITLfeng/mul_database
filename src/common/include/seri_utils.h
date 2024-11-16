@@ -23,6 +23,7 @@ void SeriStringM(char **bufCursor, const char *value);
 
 void SeriFixedStringM(uint8_t **bufCursor, const char *value, uint32_t fixLen);
 
+
 // 反序列化
 char DeseriCharM(uint8_t **bufCursor);
 

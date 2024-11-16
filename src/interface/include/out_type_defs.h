@@ -34,6 +34,10 @@ typedef enum OperatorCode {
     OP_SIMREL_QUERY_TABLE, // 内部调用
     OP_SIMREL_BUTT,
 
+    // sysview
+    OP_SYSVIEW_EDIT = 100,
+    OP_SYSVIEW_END,
+
     // END
     OP_BUTT,
 } OperatorCode;
@@ -132,6 +136,16 @@ typedef struct CliStmt {
     DbConnectT *conn;
     CliTableSchemaT *tableSchema; // 缓存某次操作的schema信息 后续考虑优化为共享内存方案，可以减少通信开销
 } CliStmtT; // 一个stmt只能操作一个DB内的一张表
+
+typedef enum {
+    // op
+    MEM_OP_ALLOC = 0,
+    MEM_OP_FREE,
+    MEM_OP_CREATE_MEMCTX,
+    MEM_OP_RESET_MEMCTX,
+    MEM_OP_DELETE_MEMCTX
+    // query
+} MemOperatorT;
 
 
 // ************************************
