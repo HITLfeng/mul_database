@@ -78,6 +78,8 @@ Status DMSrInsertData(QryStmtT *stmt);
 Status DMSrGetDbDesc(QryStmtT *stmt);
 Status DMSrQueryTable(QryStmtT *stmt);
 
+Status DMExecSysviewEdit(QryStmtT *stmt);
+
 
 
 

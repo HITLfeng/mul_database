@@ -71,6 +71,17 @@ typedef struct KVConnect {
     // uint16_t port;
 } DbConnectT;
 
+// gmsysview 相关类型定义
+typedef enum {
+    // op
+    MEM_OP_ALLOC = 0,
+    MEM_OP_FREE,
+    MEM_OP_CREATE_MEMCTX,
+    MEM_OP_RESET_MEMCTX,
+    MEM_OP_DELETE_MEMCTX
+    // query
+} MemOperatorT;
+
 // ************************************
 // SIMPLERELATION 相关类型定义 start
 // ************************************
@@ -99,6 +110,12 @@ typedef struct SimpleRelExecCtx {
     void *insertData; // 待插入数据
     uint32_t totalFldSize; // 字段总长度
 } SimpleRelExecCtxT;
+
+typedef struct SysviewEditCtx {
+    MemOperatorT op;
+    uint32_t allocSize;
+    uint32_t allocTime; // 申请多少次
+} SysviewEditCtxT;
 
 typedef struct RunCtx {
     OperatorCode opCode;
@@ -137,15 +154,7 @@ typedef struct CliStmt {
     CliTableSchemaT *tableSchema; // 缓存某次操作的schema信息 后续考虑优化为共享内存方案，可以减少通信开销
 } CliStmtT; // 一个stmt只能操作一个DB内的一张表
 
-typedef enum {
-    // op
-    MEM_OP_ALLOC = 0,
-    MEM_OP_FREE,
-    MEM_OP_CREATE_MEMCTX,
-    MEM_OP_RESET_MEMCTX,
-    MEM_OP_DELETE_MEMCTX
-    // query
-} MemOperatorT;
+
 
 
 // ************************************

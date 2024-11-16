@@ -1,8 +1,9 @@
 #include "common.h"
 #include "out_type_defs.h"
-#include "seri_utils.c"
+#include "seri_utils.h"
 #include "client_common.h"
 #include "outfunction.h"
+#include "kvsysview_common.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -37,45 +38,59 @@ typedef struct SysviewQueryCtxAllocMemctx {
     uint32_t allocTime; // 申请多少次
 } SysviewQueryCtxAllocMemctxT;
 
-void DbSysFillRequestMsgBuf(SysviewQueryCtxBaseT *ctxBase, char **bufCursor)
-{
+void DbSysFillRequestMsgBuf(SysviewQueryCtxBaseT *ctxBase, uint8_t **bufCursor) {
     MemOperatorT op = ctxBase->op;
-
+    SeriUint32M(bufCursor, (uint32_t)op);
+    switch (op) {
+    case MEM_OP_ALLOC: {
+        SysviewQueryCtxAllocMemctxT *ctx = (SysviewQueryCtxAllocMemctxT *)(ctxBase);
+        SeriUint32M(bufCursor, ctx->allocSize);
+        SeriUint32M(bufCursor, ctx->allocTime);
+        break;
+    }
+    case MEM_OP_FREE:
+        break;
+    case MEM_OP_CREATE_MEMCTX:
+        break;
+    case MEM_OP_RESET_MEMCTX:
+        break;
+    case MEM_OP_DELETE_MEMCTX:
+        break;
+    default:
+        break;
+    }
 }
 
 Status DbSysQureyExec(DbConnectT *conn, SysviewQueryCtxBaseT *ctxBase) {
     DB_POINT2(conn, ctxBase);
-
 
     // 申请栈内存
     MsgBufRequestT msgBuf = {0};
     SysInitMsgBuf(&msgBuf, OP_SYSVIEW_EDIT);
 
     // len/dbname
-    char *bufCursor = msgBuf.requestMsg;
+    uint8_t *bufCursor = (uint8_t *)msgBuf.requestMsg;
+    DbSysFillRequestMsgBuf(ctxBase, &bufCursor);
 
-    SeriUint32(msgBuf.requestMsg, (uint32_t)op);
-
-    UsrDataBase SysviewRes = {0};
-    Status ret = KVCSendRequestAndRecvResponse(conn, &msgBuf, SrParseCreateDbRspCb, (UsrDataBaseT *)&createDbRes);
+    UsrDataBaseT SysviewRes = {0};
+    Status ret = KVCSendRequestAndRecvResponse(conn, &msgBuf, SysParseQueryCb, (UsrDataBaseT *)&SysviewRes);
     if (ret != GMERR_OK) {
         log_error("CLIENT: DbSysQureyExec fail.");
         return ret;
     }
     if (SysviewRes.ret != GMERR_OK) {
-        log_error("SERVER: DbSysQureyExec fail, ret is %u.", createDbRes.ret);
+        log_error("SERVER: DbSysQureyExec fail, ret is %u.", SysviewRes.ret);
         return GMERR_OK;
     }
     return GMERR_OK;
 }
 
-typedef struct SysviewMemCtxAlloc {
-    uint32_t allocSize;
-    uint32_t allocTime; // 申请多少次
-} SysviewMemCtxAllocT;
+// typedef struct SysviewMemCtxAlloc {
+//     uint32_t allocSize;
+//     uint32_t allocTime; // 申请多少次
+// } SysviewMemCtxAllocT;
 
-Status SysviewMain()
-{
+Status SysviewMain() {
     DbConnectT *conn = (DbConnectT *)malloc(sizeof(DbConnectT));
     DB_ASSERT(conn != NULL);
     memset(conn, 0, sizeof(DbConnectT));
@@ -89,7 +104,7 @@ Status SysviewMain()
     while (true) {
         printf(">> please input you choice: \n");
 
-        fgets(inputMsg, sizeof(input), stdin); // 使用fgets可以接受空格
+        fgets(inputMsg, sizeof(inputMsg), stdin); // 使用fgets可以接受空格
 
         // 去掉换行符
         inputMsg[strcspn(inputMsg, "\n")] = 0;
@@ -97,30 +112,37 @@ Status SysviewMain()
         if (strcmp(inputMsg, "q") == 0) {
             printf("quit now.\n");
             break;
-        } else if (strcmp(input, "1") == 0) {
-            SysviewMemCtxAllocT sca = {0};
+        } else if (strcmp(inputMsg, "1") == 0) {
+            SysviewQueryCtxAllocMemctxT sca = {0};
+            sca.op = MEM_OP_ALLOC;
             printf(">> please input allocSize: ");
             scanf("%u", &sca.allocSize);
             if (sca.allocSize == 0) {
                 printf("allocsize should not eq 0.\n");
-                system("clear");
+                // system("clear");
                 continue;
             }
             printf(">> please input allocTime: ");
             scanf("%u", &sca.allocTime);
             if (sca.allocTime == 0) {
                 printf("allocTime should not eq 0.\n");
-                system("clear");
+                // system("clear");
                 continue;
             }
-
-        } else if (strcmp(input, "2") == 0) {
+            ret = DbSysQureyExec(conn, (SysviewQueryCtxBaseT *)&sca);
+            if (ret != GMERR_OK) {
+                printf("DbSysQureyExec fail and ret is %u.\n", ret);
+                // system("clear");
+                continue;
+            }
+            printf("DbSysQureyExec success.\n");
+        } else if (strcmp(inputMsg, "2") == 0) {
             printf("DbDymMemCtxFree is not support now!\n");
         } else {
+            printf("Not support now!\n");
         }
-        system("clear");
+        // system("clear");
     }
-
 
     KVCDisconnect(conn);
 }

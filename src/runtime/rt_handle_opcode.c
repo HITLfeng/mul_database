@@ -35,6 +35,20 @@ Status RtHandleAddTest(char *usrMsg, char *resultBuf, uint32_t bufLen) {
 }
 
 bool IsSimpleRelOpCode(OperatorCode opCode) { return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT; }
+bool IsSysviewOpCode(OperatorCode opCode) { return opCode >= OP_SYSVIEW_EDIT && opCode < OP_SYSVIEW_END; }
+void RtSysviewInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SysviewEditCtxT *execCtx) {
+    uint8_t *bufCursor = (uint8_t *)usrMsg;
+    switch (opCode) {
+    case OP_SYSVIEW_EDIT:
+        execCtx->op = (MemOperatorT)DeseriUint32M(&bufCursor);
+        execCtx->allocSize = DeseriUint32M(&bufCursor);
+        execCtx->allocTime = DeseriUint32M(&bufCursor);
+        break;
+    default:
+        break;
+    }
+
+}
 
 void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx) {
     char *bufCursor = usrMsg;
@@ -89,6 +103,19 @@ void RtSeriTable(uint8_t **bufCursor, QryStmtT *stmt) {
         // printf("field type is %d\n", (uint32_t)property->fieldType);
         SeriUint32M(bufCursor, property->fieldSize);
         // printf("field size is %d\n", property->fieldSize);
+    }
+}
+
+void RtSysviewSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
+    char *bufCursor = resultBuf;
+    switch (stmt->opCode) {
+    case OP_SYSVIEW_EDIT:
+        break;
+    default:
+        break;
+    }
+    if (stmt->retEntry != NULL) {
+        KVMemFree(stmt->retEntry, stmt->retEntryBufLen);
     }
 }
 
@@ -168,6 +195,42 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     return GMERR_OK;
 }
 
+Status RtHandleSysViewEdit(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen) {
+    if (!IsSysviewOpCode(opCode)) {
+        log_error("sys view edit op code invaild, opCode is %d", opCode);
+        return GMERR_SRDB_OP_CODE_INVAILD; // TODO: 修改错误码
+    }
+
+    QryStmtT *stmt = (QryStmtT *)KVMemAlloc(sizeof(QryStmtT));
+    if (stmt == NULL) {
+        log_error("alloc qry stmt failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(stmt, 0, sizeof(QryStmtT));
+
+    // sysview 通用结构体
+    SysviewEditCtxT execCtx = {0};
+
+    // 根据opCode 解析execCtx
+    RtSysviewInitExecCtxByOpCode(opCode, usrMsg, &execCtx);
+
+    RtInitStmt(stmt, opCode, (void *)&execCtx);
+
+    Status ret = EEProcessRuntimeOpCode(stmt);
+    if (ret != GMERR_OK) {
+        log_error("process simple rel op code failed, opCode is %d", opCode);
+        return ret;
+    }
+
+    // Status ret = DmProcessSimpleRelOpCode(opCode, &execCtx);
+    // 根据opCode 填写返回结果
+    RtSRSetResultBufByOpCode(resultBuf, stmt);
+
+    KVMemFree(stmt, sizeof(QryStmtT));
+    return GMERR_OK;
+    return GMERR_OK;
+}
+
 // RUNTIME 模块完成 报文解析 与 报文回填
 
 Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen) {
@@ -185,6 +248,10 @@ Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint3
     case OP_SIMREL_QUERY_TABLE:
     case OP_SIMREL_DFX_DB_DESC:
         return RtHandleSimpleRelOpCode(opCode, usrMsg, resultBuf, bufLen);
+    case OP_SYSVIEW_EDIT:
+        return RtHandleSysViewEdit(opCode, usrMsg, resultBuf, bufLen);
+    // case OP_SYSVIEW_END:
+    //     return RtHandleSysViewEnd(usrMsg, resultBuf, bufLen);
     default:
         break;
     }

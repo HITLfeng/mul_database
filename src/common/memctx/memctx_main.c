@@ -730,7 +730,7 @@ void DbMemCtxDeleteInner(DbMemCtxT *memCtx) {
     }
     // find leaf memctx node
     DbMemCtxReset(memCtx);
-    uint32_t freePageCnt = GetPageListLength(memCtx);
+    uint32_t freePageCnt = GetPageListLength(memCtx->freePageList);
     DB_ASSERT(freePageCnt == memCtx->freePageCnt);
     // 将全部页上交给父节点
     DbMemCtxT *parentMemCtx = memCtx->parentMemCtx;

@@ -1,5 +1,5 @@
 # 指定CMake最低版本 建议写
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 # 指定项目名称 （版本 备注 语言...）
 project(kv-database-server)
@@ -18,6 +18,10 @@ set(COMMON_PATH ${CMAKE_CURRENT_SOURCE_DIR}/common)
 set(INTERFACE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/interface)
 # ee 模块的路径
 set(EXECTOR_PATH ${CMAKE_CURRENT_SOURCE_DIR}/exector)
+# kvsysview 模块的路径
+set(KVSYSVIEW_PATH ${CMAKE_CURRENT_SOURCE_DIR}/kvsysview)
+# client 模块的路径
+set(CLIENT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/client)
 
 add_subdirectory(common)
 # add_subdirectory(interface)
@@ -27,3 +31,4 @@ add_subdirectory(runtime)
 add_subdirectory(storage)
 add_subdirectory(main)
 add_subdirectory(client)
+add_subdirectory(kvsysview)

@@ -1,5 +1,6 @@
 #include "include/spr_common.h"
 #include "kv_json.h"
+#include "db_memctx.h"
 
 // void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl)
 // {
@@ -352,5 +353,19 @@ Status DMSrInsertData(QryStmtT *stmt) {
     }
 
     SEFixedHeapInsertRow(&labelCtrl->heapRow, execCtx->insertData);
+    return GMERR_OK;
+}
+
+Status DMExecSysviewEdit(QryStmtT *stmt) {
+    SysviewEditCtxT *execCtx = (SysviewEditCtxT *)stmt->entry;
+
+    for (uint32_t i = 0; i < execCtx->allocTime; ++i) {
+        void *ptr = DbDynMemCtxAlloc(NULL, execCtx->allocSize);
+        if (ptr == NULL) {
+            log_error("DbDynMemCtxAlloc failed.");
+            return GMERR_KV_MEMORY_ALLOC_FAILED;
+        }
+    }
+
     return GMERR_OK;
 }

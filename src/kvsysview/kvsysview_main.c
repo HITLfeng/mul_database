@@ -1,11 +1,9 @@
 
-
-#define SYSVIEW_OPCODE_MEMCTX 0
+#include "kvsysview_common.h"
 
 int main(int argc, char *argv[])
 {
-
     SysviewMain();
-
+     
     return 0;
 }

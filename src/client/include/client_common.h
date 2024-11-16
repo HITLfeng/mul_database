@@ -2,6 +2,7 @@
 #define __CLIENT_COMMON_H__
 
 #include "../../interface/include/out_type_defs.h"
+#include "../../interface/include/outfunction.h"
 #include "../../common/include/seri_utils.h"
 #ifdef __cplusplus
 extern "C" {

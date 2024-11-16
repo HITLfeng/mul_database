@@ -5,7 +5,7 @@ static bool EEIsSimpleRelOpCode(OperatorCode opCode) {
     return opCode >= OP_SIMREL_CREATE_DB && opCode < OP_SIMREL_BUTT;
 }
 
-inline bool EEIsSysviewOpCode(OperatorCode opCode)
+static bool EEIsSysviewOpCode(OperatorCode opCode)
 {
     return opCode >= OP_SYSVIEW_EDIT && opCode < OP_SYSVIEW_END;
 }
@@ -42,7 +42,7 @@ Status EEProcessSysviewOpcode(QryStmtT *stmt)
 {
     switch (stmt->opCode) {
         case OP_SYSVIEW_EDIT:
-            return DMSrCreateDb(stmt);
+            return DMExecSysviewEdit(stmt);
         default:
             break;
     }
