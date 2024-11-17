@@ -22,20 +22,23 @@ SrDbCtrlManagerT *GetDbCtrlManager(void)
     {
         return g_srDbCtrlManager;
     }
-    // 创建并初始化
-    g_srDbCtrlManager = KVMemAlloc(sizeof(SrDbCtrlManagerT));
-    if (g_srDbCtrlManager == NULL)
+    // 创建并初始化 元数据管理结构体 申请自 metadata memCtx
+    DbMemCtxT *memCtx = NULL;
+    Status ret = DbCreateMemCtx(DbGetMetaMemCtx(), "db_ctrl_manager", &memCtx);
+    if (ret != GMERR_OK) {
+        return NULL;
+    }
+
+    SrDbCtrlManagerT *dbCtrlMng = DbDynMemCtxAlloc(memCtx, sizeof(SrDbCtrlManagerT));
+    if (dbCtrlMng == NULL)
     {
         log_error("alloc db_ctrl_manager failed.");
         return NULL;
     }
 
-    Status ret = DbVectorInit(&g_srDbCtrlManager->dbCtrlList, sizeof(SrDbCtrlT));
-    if (ret != GMERR_OK)
-    {
-        log_error("init g_srDbCtrlManager failed.");
-        return NULL;
-    }
+    DbVectorInit(&dbCtrlMng->dbCtrlList, sizeof(SrDbCtrlT), memCtx);
+    dbCtrlMng->memCtx = memCtx;
+    g_srDbCtrlManager = dbCtrlMng;
     return g_srDbCtrlManager;
 }
 

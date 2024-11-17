@@ -5,6 +5,7 @@
 #include "../../../common/include/vector_util.h"
 #include "../../../common/include/common.h"
 #include "../../../common/include/kv_memory.h"
+#include "db_memctx.h"
 #include "se_out_function.h"
 #include "interface_common.h"
 
@@ -17,12 +18,14 @@ typedef struct SrDbCtrl
     char *dbName;
     uint32_t dbId;
     DbVectorT labelCtrlList; // 存放 SrLabelT
+    DbMemCtxT *memCtx;
 } SrDbCtrlT;
 
 typedef struct SrDbCtrlManager
 {
     // TODO:lock
     DbVectorT dbCtrlList; // 存放 SrDbCtrlT
+    DbMemCtxT *memCtx; // db_ctrl_manager memctx 父节点是 meta memctx
 } SrDbCtrlManagerT;
 
 typedef struct SrProperty

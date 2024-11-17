@@ -35,40 +35,51 @@ Status DMSrCreateDb(QryStmtT *stmt) {
         log_error("DMSrCreateDb: dbName is exist.");
         return GMERR_DATAMODEL_SRDB_NAME_EXISTED;
     }
-    SrDbCtrlT dbCtrl = {0};
-    dbCtrl.dbName = (char *)KVMemAlloc(strlen(execCtx->dbName) + 1);
-    if (dbCtrl.dbName == NULL) {
-        log_error("DMSrCreateDb: dbName alloc failed.");
-        return GMERR_KV_MEMORY_ALLOC_FAILED;
-    }
-    memset(dbCtrl.dbName, 0, strlen(execCtx->dbName) + 1);
-    strcpy(dbCtrl.dbName, execCtx->dbName);
-    ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
+    SrDbCtrlManagerT *dbCtrlMgr = GetDbCtrlManager();
+
+    DbMemCtxT *dbMemCtx = NULL;
+    ret = DbCreateMemCtx(dbCtrlMgr->memCtx, execCtx->dbName, &dbMemCtx);
     if (ret != GMERR_OK) {
-        KVMemFree(dbCtrl.dbName, sizeof(SrLabelT));
-        log_error("DMSrCreateDb: DbVectorInit labelCtrlList failed.");
+        log_error("DMSrCreateDb: DbCreateMemCtx failed.");
         return ret;
     }
+
+    SrDbCtrlT dbCtrl = {0};
+    dbCtrl.dbName = (char *)DbDynMemCtxAlloc(dbMemCtx, strlen(execCtx->dbName) + 1);
+    if (dbCtrl.dbName == NULL) {
+        log_error("DMSrCreateDb: dbName alloc failed.");
+        DbMemCtxDelete(dbMemCtx);
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    // memset(dbCtrl.dbName, 0x00, strlen(execCtx->dbName) + 1);
+    memcpy(dbCtrl.dbName, execCtx->dbName, strlen(execCtx->dbName) + 1);
+
+    DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT), dbMemCtx);
+    // ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
+    // if (ret != GMERR_OK) {
+    //     KVMemFree(dbCtrl.dbName, sizeof(SrLabelT));
+    //     log_error("DMSrCreateDb: DbVectorInit labelCtrlList failed.");
+    //     return ret;
+    // }
     dbCtrl.dbId = GenSrDbId();
 
-    SrDbCtrlManagerT *dbCtrlMgr = GetDbCtrlManager();
     ret = DbVectorAppendItem(&dbCtrlMgr->dbCtrlList, &dbCtrl);
     if (ret != GMERR_OK) {
-        KVMemFree(dbCtrl.dbName, strlen(execCtx->dbName) + 1);
         DbVectorDestroy(&dbCtrl.labelCtrlList);
+        DbMemCtxDelete(dbMemCtx);
         log_error("DMSrCreateDb: DbVectorAppendItem labelCtrlList failed.");
         return ret;
     }
-    // 设置返回结果
+    // 设置返回结果 使用 stmt 上的内存
     uint32_t retEntryBufLen = sizeof(uint32_t);
-    void *retEntry = (void *)KVMemAlloc(retEntryBufLen);
+    void *retEntry = DbDynMemCtxAlloc(stmt->memCtx, retEntryBufLen);
     if (retEntry == NULL) {
-        KVMemFree(dbCtrl.dbName, strlen(execCtx->dbName) + 1);
         DbVectorDestroy(&dbCtrl.labelCtrlList);
+        DbMemCtxDelete(dbMemCtx);
         log_error("DMSrCreateDb: KVMemAlloc retEntry failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
-    memset(retEntry, 0, retEntryBufLen);
+    // memset(retEntry, 0, retEntryBufLen);
     *((uint32_t *)retEntry) = dbCtrl.dbId;
     stmt->retEntry = retEntry;
     stmt->retEntryBufLen = retEntryBufLen;

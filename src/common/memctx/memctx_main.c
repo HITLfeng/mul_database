@@ -78,7 +78,7 @@ typedef struct DbMemCtxManager {
     uint32_t initPageSize;   // 初始每页大小
     uint32_t initPageCnt;    // 初始最顶层有多少页
 
-    DbMemCtxT *topMemCtx; // 最顶层的 memCtx
+    DbMemCtxT *topMemCtx;  // 最顶层的 memCtx
     DbMemCtxT *dataMemCtx; // data memCtx. 存放全部元数据、管理结构、数据, 与topMemCtx独立
 } DbMemCtxManagerT;
 
@@ -168,6 +168,7 @@ void DbMemCtxMgrTrace(DbMemCtxManagerT *memCtxManager) {
 void DbMemFreeListPushFront(DbMemCtxT *memCtx, DbMemPageT *page) {
     page->nextPageAddr = memCtx->freePageList;
     memCtx->freePageList = page;
+    memCtx->freePageCnt++;
 }
 /**
  * tools
@@ -178,8 +179,7 @@ void DbMemFreeListPushFront(DbMemCtxT *memCtx, DbMemPageT *page) {
 /*
  * 初始化 g_dynMemCtx 内部調用接口
  */
-Status DbInitMemCtxInner(DbMemCtxManagerT *memCtxManager, const char *memCtxName, DbMemCtxT **outMemCtx)
-{
+Status DbInitMemCtxInner(DbMemCtxManagerT *memCtxManager, const char *memCtxName, DbMemCtxT **outMemCtx) {
     uint32_t allocSize = sizeof(DbMemCtxT);
     DbMemCtxT *memCtx = (DbMemCtxT *)DbMalloc(allocSize);
     if (memCtx == NULL) {
@@ -352,6 +352,8 @@ bool DbHasPageInSlot(DbMemCtxT *memCtx, uint32_t level) { return memCtx->fixSize
 /**
  * 从当前memCtx中申请一页出来,没有的话会自动像父节点借
  * @param memCtx 要借的memCtx
+ * 注意 这个函数调用完要手动 ++freePageCnt totalPageCnt 这个bug 暂时不修复 先麻烦点用着 
+ * 已解决
  * @return
  */
 Status DbGetFreePageFromParentMemCtx(DbMemCtxT *parentMemCtx, DbMemCtxT *memCtx) {
@@ -379,6 +381,7 @@ Status DbGetFreePageFromParentMemCtx(DbMemCtxT *parentMemCtx, DbMemCtxT *memCtx)
         memCtx->freePageList = freePage;
         freePage->nextPageAddr = childOldFreePageList;
         memCtx->freePageCnt++;
+        memCtx->totalPageCnt++;
     }
     return GMERR_OK;
 }
@@ -390,6 +393,8 @@ Status DbAllocPageFromCurrMemCtxInner(DbMemCtxT *memCtx) {
         if (ret != GMERR_OK) {
             return ret;
         }
+        // memCtx->freePageCnt++;
+        // memCtx->totalPageCnt++;
     }
     return GMERR_OK;
 }
@@ -713,7 +718,7 @@ Status DbCreateMemCtx(DbMemCtxT *memCtx, const char *name, DbMemCtxT **childMemC
  */
 
 // 该函数不能修改 currPage->nextPageAddr
-typedef void(*HandlerPage)(DbMemPageT *page);
+typedef void (*HandlerPage)(DbMemPageT *page);
 
 void DbMemCtxDealPageList(DbMemPageT *pageList, HandlerPage handler) {
     DbMemPageT *currPage = pageList;
@@ -774,6 +779,7 @@ void DbMemCtxReset(DbMemCtxT *memCtx) {
         DbMemCtxDealPageList(pageList, ResetSinglePage);
         // 将当前页挂载到freeList
         PageListHeadInsert(pageList, memCtx);
+        memCtx->fixSizeLevelList[i] = NULL;
     }
     // 遍历所有大对象
     for (uint32_t i = 0; i < memCtx->bigMemAllocCnt; ++i) {
@@ -819,10 +825,10 @@ Status DbMemCtxDelete(DbMemCtxT *memCtx) {
         for (uint32_t j = i; j < parentMemCtx->childNum - 1; ++j) {
             parentMemCtx->childMemCtx[j] = parentMemCtx->childMemCtx[j + 1];
         }
-        DbMemCtxDeleteInner(memCtx);
     } else {
         log_error("delete failed and curr memctx is not a invaild tree.");
         return GMERR_MEMCTX_TREE_INVAILD;
     }
+    DbMemCtxDeleteInner(memCtx);
     return GMERR_OK;
 }

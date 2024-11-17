@@ -3,6 +3,7 @@
 
 
 #include "common.h"
+#include "db_memctx.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -14,9 +15,10 @@ typedef struct DbVector
     uint32_t capacity;
     uint32_t itemSize;
     void *data;
+    DbMemCtxT *memCtx;
 } DbVectorT;
 
-Status DbVectorInit(DbVectorT *vector, uint32_t itemSize); // 初始化vector itemSize 存放内容大小
+void DbVectorInit(DbVectorT *vector, uint32_t itemSize, DbMemCtxT *memCtx); // 初始化vector itemSize 存放内容大小
 
 Status DbVectorAppendItem(DbVectorT *vector, void *item);
 

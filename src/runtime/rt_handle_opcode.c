@@ -150,7 +150,8 @@ void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
         break;
     }
     if (stmt->retEntry != NULL) {
-        KVMemFree(stmt->retEntry, stmt->retEntryBufLen);
+        DbDynMemCtxFree(stmt->memCtx, stmt->retEntry);
+        stmt->retEntry = NULL;
     }
 }
 

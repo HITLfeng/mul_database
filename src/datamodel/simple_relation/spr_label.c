@@ -215,7 +215,7 @@ Status DMSrCreateTable(QryStmtT *stmt) {
 
     // 设置返回结果
     uint32_t retEntryBufLen = sizeof(uint32_t);
-    void *retEntry = (void *)KVMemAlloc(retEntryBufLen);
+    void *retEntry = (void *)DbDynMemCtxAlloc(stmt->memCtx, retEntryBufLen);
     if (retEntry == NULL) {
         log_error("DMSrCreateTable: KVMemAlloc retEntry failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
@@ -322,7 +322,7 @@ Status DMSrQueryTable(QryStmtT *stmt) {
         log_error("DMSrCreateTable: get labelCtrl failed.");
         return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
     }
-    SrPropertyT *properties = (SrPropertyT *)KVMemAlloc(labelCtrl->fieldCnt * sizeof(SrPropertyT));
+    SrPropertyT *properties = (SrPropertyT *)DbDynMemCtxAlloc(stmt->memCtx, labelCtrl->fieldCnt * sizeof(SrPropertyT));
     if (properties == NULL) {
         log_error("DMSrCreateTable: properties alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
