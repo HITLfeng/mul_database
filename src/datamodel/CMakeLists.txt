@@ -19,6 +19,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/simple_relation/include)
 include_directories(${COMMON_PATH}/include)
 message(STATUS " STORAGE_PATH include path: ${STORAGE_PATH}/include) ")
 include_directories(${STORAGE_PATH}/include)
+include_directories(${INTERFACE_PATH}/include)
 
 
 # 设置动态库生成路径

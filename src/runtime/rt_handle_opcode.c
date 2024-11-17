@@ -89,6 +89,7 @@ void RtSRInitExecCtxByOpCode(QryStmtT *stmt, char *usrMsg, SimpleRelExecCtxT *ex
     default:
         break;
     }
+    stmt->entry = execCtx;
 }
 
 void RtSeriTable(uint8_t **bufCursor, QryStmtT *stmt) {
@@ -160,7 +161,7 @@ void RtInitStmt(QryStmtT *stmt, OperatorCode opCode, void *execCtx) {
 
 Status RtInitQryStmt(OperatorCode opCode, QryStmtT **outStmt) {
     // 从顶层memCtx上申请stmt内存
-    DB_POINT2(execCtx, outStmt);
+    DB_POINT(outStmt);
     // 申请新memCtx
     DbMemCtxT *stmtMemCtx = NULL;
     Status ret = DbCreateMemCtx(NULL, "qry_stmt_memctx", &stmtMemCtx);

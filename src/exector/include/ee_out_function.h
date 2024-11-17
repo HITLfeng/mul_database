@@ -3,6 +3,7 @@
 
 #include "ee_common.h"
 #include "out_type_defs.h"
+#include "interface_common.h"
 
 #ifdef __cplusplus
 extern "C" {

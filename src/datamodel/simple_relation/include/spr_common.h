@@ -6,6 +6,7 @@
 #include "../../../common/include/common.h"
 #include "../../../common/include/kv_memory.h"
 #include "se_out_function.h"
+#include "interface_common.h"
 
 #ifdef __cplusplus
 extern "C" {

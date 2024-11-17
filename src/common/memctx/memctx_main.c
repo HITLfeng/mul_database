@@ -530,7 +530,7 @@ void DbDynMemCtxRecycle(DbMemCtxT *memCtx, DbMemPageT *page, uint32_t slotId) {
             // RESET page
             if (prevPage == NULL) {
                 // first in
-                memCtx->fixSizeLevelList[slotId] = NULL; // clear to empty
+                memCtx->fixSizeLevelList[slotId] = currPage->nextPageAddr; // clear to empty
             } else {
                 prevPage->nextPageAddr = currPage->nextPageAddr;
             }
@@ -539,7 +539,7 @@ void DbDynMemCtxRecycle(DbMemCtxT *memCtx, DbMemPageT *page, uint32_t slotId) {
             // push front memCtx freeList
             DbMemFreeListPushFront(memCtx, page);
             log_trace("page %u has recycle", slotId);
-            break;
+            return;
         }
         prevPage = currPage;
         currPage = currPage->nextPageAddr;
