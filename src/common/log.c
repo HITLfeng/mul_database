@@ -116,6 +116,7 @@ static void init_event(log_Event *ev, void *udata)
 
 void log_log(int level, const char *file, int line, const char *fmt, ...)
 {
+    log_set_level(2); // info以上才答应
     log_Event ev = {
         .fmt = fmt,
         .file = file,

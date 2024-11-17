@@ -5,7 +5,7 @@ source /opt/rh/devtoolset-8/enable
 
 function messageShow() {
     echo "======================================"
-    echo "cd test"
+    echo " source scripts/env.sh; cd test; ./kv-test --gtest_color=yes --gtest_filter=*;"
     echo "======================================"
     echo "./kv-test --gtest_color=yes --gtest_filter=SimpleRelationJsonTest.*"
     echo "======================================"
