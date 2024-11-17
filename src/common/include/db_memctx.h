@@ -16,6 +16,11 @@ Status DbCreateMemCtx(DbMemCtxT *memCtx, const char *name, DbMemCtxT **childMemC
 void DbMemCtxReset(DbMemCtxT *memCtx);
 Status DbMemCtxDelete(DbMemCtxT *memCtx);
 
+// 依次是 获取顶层memctx 元数据memctx 存储数据memctx
+DbMemCtxT *DbGetTopMemCtx();
+DbMemCtxT *DbGetMetaMemCtx();
+DbMemCtxT *DbGetDataMemCtx();
+
 #ifdef __cplusplus
 }
 #endif

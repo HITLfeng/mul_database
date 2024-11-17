@@ -29,6 +29,9 @@
 
 #define PAGE_INVAILD_VALUE 0
 
+#define META_MEMCTX_NAME "data_meta_memCtx"
+#define DATA_MEMCTX_NAME "data_data_memCtx"
+
 typedef enum {
     PAGE_FIX_ALLOC = 0, // 固定分配每页大小 4/4/4/4/4 默认
     PAGE_RANDOM_ALLOC   // 随机分配每页大小 4/15/128/5
@@ -76,12 +79,25 @@ typedef struct DbMemCtxManager {
     uint32_t initPageCnt;    // 初始最顶层有多少页
 
     DbMemCtxT *topMemCtx; // 最顶层的 memCtx
+    DbMemCtxT *dataMemCtx; // data memCtx. 存放全部元数据、管理结构、数据, 与topMemCtx独立
 } DbMemCtxManagerT;
 
 // DbMemCtxT g_topDynMemCtx = NULL;
 DbMemCtxManagerT *g_memCtxManager = NULL;
 
 DbMemCtxT *DbGetTopMemCtx() { return g_memCtxManager->topMemCtx; }
+
+DbMemCtxT *DbGetMetaMemCtx() {
+    DB_POINT2(g_memCtxManager, g_memCtxManager->dataMemCtx);
+    DB_ASSERT(strcmp(g_memCtxManager->dataMemCtx->childMemCtx[0]->memCtxName, META_MEMCTX_NAME) == 0);
+    return g_memCtxManager->dataMemCtx->childMemCtx[0];
+}
+
+DbMemCtxT *DbGetDataMemCtx() {
+    DB_POINT2(g_memCtxManager, g_memCtxManager->dataMemCtx);
+    DB_ASSERT(strcmp(g_memCtxManager->dataMemCtx->childMemCtx[1]->memCtxName, DATA_MEMCTX_NAME) == 0);
+    return g_memCtxManager->dataMemCtx->childMemCtx[1];
+}
 
 void *DbMalloc(uint32_t allocSize) {
     void *ptr = malloc(allocSize);
@@ -162,38 +178,39 @@ void DbMemFreeListPushFront(DbMemCtxT *memCtx, DbMemPageT *page) {
 /*
  * 初始化 g_dynMemCtx 内部調用接口
  */
-Status DbInitTopMemCtx(DbMemCtxManagerT *memCtxManager) {
+Status DbInitMemCtxInner(DbMemCtxManagerT *memCtxManager, const char *memCtxName, DbMemCtxT **outMemCtx)
+{
     uint32_t allocSize = sizeof(DbMemCtxT);
-    DbMemCtxT *topMemCtx = (DbMemCtxT *)DbMalloc(allocSize);
-    if (topMemCtx == NULL) {
+    DbMemCtxT *memCtx = (DbMemCtxT *)DbMalloc(allocSize);
+    if (memCtx == NULL) {
         //        DbFree(memCtxManager);
-        log_error("malloc error when init topMemCtx. alloc size is %u.", allocSize);
+        log_error("malloc error when init memCtx. alloc size is %u.", allocSize);
         return GMERR_MEMORY_ALLOC_FAILED;
     }
-    memset(topMemCtx, 0x00, allocSize);
-    const char *topName = "top_dyn_memCtx";
-    memcpy(topMemCtx->memCtxName, topName, STRLEN(topName));
+    memset(memCtx, 0x00, allocSize);
+    const char *topName = memCtxName;
+    memcpy(memCtx->memCtxName, topName, STRLEN(topName));
     DbMemAddAllocSize(memCtxManager, allocSize);
-    topMemCtx->freePageCnt = memCtxManager->initPageCnt;
-    topMemCtx->totalPageCnt = memCtxManager->initPageCnt;
-    topMemCtx->childNum = 0;
+    memCtx->freePageCnt = memCtxManager->initPageCnt;
+    memCtx->totalPageCnt = memCtxManager->initPageCnt;
+    memCtx->childNum = 0;
 
     allocSize = memCtxManager->initPageCnt * sizeof(DbMemPageT);
-    topMemCtx->freePageList = (DbMemPageT *)DbMalloc(allocSize);
-    if (topMemCtx->freePageList == NULL) {
-        DbFree(topMemCtx);
+    memCtx->freePageList = (DbMemPageT *)DbMalloc(allocSize);
+    if (memCtx->freePageList == NULL) {
+        DbFree(memCtx);
         log_error("malloc error when init freePageList. alloc size is %u.", allocSize);
         return GMERR_MEMORY_ALLOC_FAILED;
     }
-    memset(topMemCtx->freePageList, 0x00, allocSize);
+    memset(memCtx->freePageList, 0x00, allocSize);
     DbMemAddAllocSize(memCtxManager, allocSize);
 
     // 申請實際頁
     allocSize = memCtxManager->initPageCnt * memCtxManager->initPageSize;
     void *pageAddr = DbMalloc(allocSize);
     if (pageAddr == NULL) {
-        DbFree(topMemCtx->freePageList);
-        DbFree(topMemCtx);
+        DbFree(memCtx->freePageList);
+        DbFree(memCtx);
         log_error("malloc error when init pageAddr. alloc size is %u.", allocSize);
         return GMERR_MEMORY_ALLOC_FAILED;
     }
@@ -201,8 +218,44 @@ Status DbInitTopMemCtx(DbMemCtxManagerT *memCtxManager) {
     DbMemAddAllocSize(memCtxManager, allocSize);
 
     // 構造 鏈表順序
-    DbInitFreeList(topMemCtx->freePageList, memCtxManager->initPageCnt, pageAddr);
-    memCtxManager->topMemCtx = topMemCtx;
+    DbInitFreeList(memCtx->freePageList, memCtxManager->initPageCnt, pageAddr);
+    *outMemCtx = memCtx;
+    return GMERR_OK;
+}
+
+Status DbInitTopMemCtx(DbMemCtxManagerT *memCtxManager) {
+    DbMemCtxT *memCtx = NULL;
+    Status ret = DbInitMemCtxInner(memCtxManager, "top_dyn_memCtx", &memCtx);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+    memCtxManager->topMemCtx = memCtx;
+    return GMERR_OK;
+}
+
+Status DbInitDataMemCtx(DbMemCtxManagerT *memCtxManager) {
+    DbMemCtxT *memCtx = NULL;
+    Status ret = DbInitMemCtxInner(memCtxManager, "data_memCtx", &memCtx);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+
+    // data memctx 创建两个基础的子memctx节点
+    // 分别为 metadata memctx(包括一些管理结构) 和 data memctx
+    DbMemCtxT *metaMemCtx = NULL;
+    ret = DbCreateMemCtx(memCtx, "data_meta_memCtx", &metaMemCtx);
+    if (ret != GMERR_OK) {
+        DbMemCtxDelete(memCtx);
+        return ret;
+    }
+    DbMemCtxT *dataMemCtx = NULL;
+    ret = DbCreateMemCtx(memCtx, "data_data_memCtx", &dataMemCtx);
+    if (ret != GMERR_OK) {
+        DbMemCtxDelete(memCtx);
+        return ret;
+    }
+    // 注意：data_memCtx下只允许这两个节点存在！
+    memCtxManager->dataMemCtx = memCtx;
     return GMERR_OK;
 }
 
@@ -222,6 +275,12 @@ Status DbInitMemManager() {
     memCtxManager->initPageCnt = MEM_TOP_INIT_PAGE_COUNT;
     Status ret = DbInitTopMemCtx(memCtxManager);
     if (ret != GMERR_OK) {
+        DbFree(memCtxManager);
+        return ret;
+    }
+    ret = DbInitDataMemCtx(memCtxManager);
+    if (ret != GMERR_OK) {
+        DbMemCtxDelete(memCtxManager->topMemCtx);
         DbFree(memCtxManager);
         return ret;
     }
