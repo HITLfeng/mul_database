@@ -103,8 +103,6 @@ Status MainWorkerStart() {
     TestBasicAlloc();
 #endif
 
-
-
     while (1) {
         clnt_addr_size = sizeof(clnt_addr);
         // 接受客户端连接请求
@@ -124,6 +122,7 @@ Status MainWorkerStart() {
 
     // 释放内存池资源
     KVMemoryPoolUninit();
+    // TODO: 清理memCtx
     // 关闭socket
     close(serv_sock);
 

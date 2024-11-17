@@ -19,7 +19,9 @@ extern "C"
 {
 #endif
 
-
+// *****************************************
+// * 客户端模块相关函数
+// *****************************************
 // 启动服务
 CliStatus KVCSrvStart(void);
 CliStatus KVCSrvStop(void);
@@ -40,7 +42,9 @@ CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf);
 // 对外接口测试函数
 CliStatus KVCCalcTwoNumber(DbConnectT *conn, int x, int y, CalcOptionT opt, int *result);
 
-
+// =========================================
+// * 客户端模块相关函数
+// =========================================
 
 // *****************************************
 // * 简单关系表相关函数 SIMPLE RELATION TABLE
@@ -72,7 +76,9 @@ CliStatus SRCDeleteData(DbConnectT *conn, const char *labelName, const char *key
 // DFX 关系表
 CliStatus SRCTraceDbDesc(DbConnectT *conn, uint32_t dbId);
 
-
+// =========================================
+// * 简单关系表相关函数 SIMPLE RELATION TABLE
+// =========================================
 
 
 

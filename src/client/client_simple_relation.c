@@ -9,6 +9,11 @@
 
 #include "include/client_common.h"
 
+
+// ********************************************
+// *******  简单关系表 相关接口 对外提供    *******
+// ********************************************
+
 // 序列化单段字符串用此接口
 void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf) {
     DB_POINT2(usrMsgBuf, buf);
@@ -237,3 +242,18 @@ CliStatus SRCInsertData(CliStmtT *stmt, ...) {
     // 客户端服务端错误码混合返回
     return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
 }
+
+/**
+ * 所有对外接口统一重构！
+ */
+/*
+Status SrcOutFunc(DbConnectT *conn, ...) {
+    // 1. 设置opcode
+    // 2. 根据opCode 填充基础信息
+    // 3. 定制填充msg特殊信息
+    // 4. 发送和接受消息
+    // 5. 触发自动回调解析 服务端 status
+    // 6. 解析服务端返回的其他特殊信息
+    // 7. 返回结果
+ }
+ */
