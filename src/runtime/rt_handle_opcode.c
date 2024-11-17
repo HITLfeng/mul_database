@@ -47,10 +47,10 @@ void RtSysviewInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SysviewEdit
     default:
         break;
     }
-
 }
 
-void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtxT *execCtx) {
+void RtSRInitExecCtxByOpCode(QryStmtT *stmt, char *usrMsg, SimpleRelExecCtxT *execCtx) {
+    OperatorCode opCode = stmt->opCode;
     char *bufCursor = usrMsg;
     switch (opCode) {
     case OP_SIMREL_CREATE_DB:
@@ -70,7 +70,7 @@ void RtSRInitExecCtxByOpCode(OperatorCode opCode, char *usrMsg, SimpleRelExecCtx
         execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
         execCtx->labelId = DeseriUint32M((uint8_t **)&bufCursor);
         execCtx->totalFldSize = DeseriUint32M((uint8_t **)&bufCursor);
-        execCtx->insertData = (void *)KVMemAlloc(execCtx->totalFldSize);
+        execCtx->insertData = DbDynMemCtxAlloc(stmt->memCtx, execCtx->totalFldSize);
         DB_ASSERT(execCtx->insertData != NULL);
         memset(execCtx->insertData, 0x00, execCtx->totalFldSize);
         DeseriFixedStringM((uint8_t **)&bufCursor, execCtx->insertData, execCtx->totalFldSize);
@@ -158,28 +158,54 @@ void RtInitStmt(QryStmtT *stmt, OperatorCode opCode, void *execCtx) {
     stmt->entry = execCtx;
 }
 
+Status RtInitQryStmt(OperatorCode opCode, QryStmtT **outStmt) {
+    // 从顶层memCtx上申请stmt内存
+    DB_POINT2(execCtx, outStmt);
+    // 申请新memCtx
+    DbMemCtxT *stmtMemCtx = NULL;
+    Status ret = DbCreateMemCtx(NULL, "qry_stmt_memctx", &stmtMemCtx);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+
+    QryStmtT *stmt = (QryStmtT *)DbDynMemCtxAlloc(stmtMemCtx, sizeof(QryStmtT));
+    if (stmt == NULL) {
+        log_error("alloc qry stmt failed.");
+        DbMemCtxDelete(stmtMemCtx);
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+
+    stmt->memCtx = stmtMemCtx;
+    stmt->opCode = opCode;
+    stmt->entry = NULL;
+    stmt->retEntry = NULL;
+    *outStmt = stmt;
+    return GMERR_OK;
+}
+
+void RtUninitQryStmt(QryStmtT *stmt) {
+    DB_POINT(stmt);
+    DbMemCtxT *memCtx = stmt->memCtx;
+    DbMemCtxDelete(memCtx);
+}
+
 Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint32_t bufLen) {
     if (!IsSimpleRelOpCode(opCode)) {
         log_error("simple rel op code invaild, opCode is %d", opCode);
         return GMERR_SRDB_OP_CODE_INVAILD;
     }
 
-    QryStmtT *stmt = (QryStmtT *)KVMemAlloc(sizeof(QryStmtT));
-    if (stmt == NULL) {
-        log_error("alloc qry stmt failed.");
-        return GMERR_KV_MEMORY_ALLOC_FAILED;
-    }
-    memset(stmt, 0, sizeof(QryStmtT));
+    // 初始化stmt
+    QryStmtT *stmt = NULL;
+    Status ret = RtInitQryStmt(opCode, &stmt);
 
     // simple rel 通用结构体
     SimpleRelExecCtxT execCtx = {0};
-
     // 根据opCode 解析execCtx
-    RtSRInitExecCtxByOpCode(opCode, usrMsg, &execCtx);
+    RtSRInitExecCtxByOpCode(stmt, usrMsg, &execCtx);
 
-    RtInitStmt(stmt, opCode, (void *)&execCtx);
-
-    Status ret = EEProcessRuntimeOpCode(stmt);
+    // EE RUNTIME 转向 ee 层处理
+    ret = EEProcessRuntimeOpCode(stmt);
     if (ret != GMERR_OK) {
         log_error("process simple rel op code failed, opCode is %d", opCode);
         return ret;
@@ -189,9 +215,10 @@ Status RtHandleSimpleRelOpCode(OperatorCode opCode, char *usrMsg, char *resultBu
     // 根据opCode 填写返回结果
     RtSRSetResultBufByOpCode(resultBuf, stmt);
     if (execCtx.insertData != NULL) {
-        KVMemFree(execCtx.insertData, execCtx.totalFldSize);
+        DbDynMemCtxFree(stmt->memCtx, execCtx.insertData);
     }
-    KVMemFree(stmt, sizeof(QryStmtT));
+    // 释放stmt
+    RtUninitQryStmt(stmt);
     return GMERR_OK;
 }
 

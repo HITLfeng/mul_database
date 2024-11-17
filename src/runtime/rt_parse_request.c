@@ -36,7 +36,7 @@ void RTProcessMain(char *message, uint32_t str_len)
         return;
     }
     // 2. 调用对应的处理函数
-    uint8_t *reslutBuf = (uint8_t *)malloc(BUF_SIZE);
+    uint8_t *reslutBuf = (uint8_t *)DbDynMemCtxAlloc(NULL, BUF_SIZE);
     if (reslutBuf == NULL)
     {
         log_error("parse request msg buffer failed. malloc failed.");
@@ -49,6 +49,6 @@ void RTProcessMain(char *message, uint32_t str_len)
 
     // 3. 设置返回报文信息
     RTSetRequestHead(message, ret, reslutBuf, BUF_SIZE);
-    free(reslutBuf);
+    DbDynMemCtxFree(NULL, reslutBuf);
     return;
 }

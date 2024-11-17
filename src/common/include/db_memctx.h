@@ -13,6 +13,8 @@ Status DbInitMemManager();
 void *DbDynMemCtxAlloc(DbMemCtxT *memCtx, uint32_t allocSize);
 void DbDynMemCtxFree(DbMemCtxT *memCtx, void *ptr);
 Status DbCreateMemCtx(DbMemCtxT *memCtx, const char *name, DbMemCtxT **childMemCtx);
+void DbMemCtxReset(DbMemCtxT *memCtx);
+Status DbMemCtxDelete(DbMemCtxT *memCtx);
 
 #ifdef __cplusplus
 }

@@ -126,6 +126,7 @@ typedef struct RunCtx {
     uint32_t currDbId;    // 当前正在操作的数据库ID
     uint32_t currLabelId; // 当前正在操作的labelID
     uint32_t currLabelFldCnt; // 当前正在操作的label字段个数
+    DbMemCtxT *memCtx; // 挂在 QryStmt 上，用于本次请求期间的内存申请
 } RunCtxT;
 
 typedef RunCtxT QryStmtT;
