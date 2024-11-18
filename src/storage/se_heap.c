@@ -3,7 +3,7 @@
 
 
 
-
+typedef struct SeRunCtx {} SeRunCtxT;
 
 void SEFixedHeapInit(FixedHeapT *heap, uint32_t rowSize) {
     memset(heap, 0x00, sizeof(FixedHeapT));
