@@ -163,6 +163,7 @@ Status RemoveDbCtrlByName(const char *dbName)
         }
         if (strcmp(dbCtrl->dbName, dbName) == 0)
         {
+            DbMemCtxDelete(dbCtrl->memCtx);
             DbVectorRemoveItem(&g_srDbCtrlManager->dbCtrlList, i);
             return GMERR_OK;
         }

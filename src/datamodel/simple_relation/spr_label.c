@@ -169,7 +169,7 @@ Status DMSrCreateTable(QryStmtT *stmt) {
     }
 
     SrLabelT labelCtrl = {0};
-    char *labelName = (char *)KVMemAlloc(strlen(createLabelCtx.labelName) + 1);
+    char *labelName = (char *)DbDynMemCtxAlloc(dbCtrl->memCtx, strlen(createLabelCtx.labelName) + 1);
     if (labelName == NULL) {
         log_error("DMSrCreateDb: labelName alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
@@ -177,12 +177,13 @@ Status DMSrCreateTable(QryStmtT *stmt) {
     strcpy(labelName, createLabelCtx.labelName);
 
     uint32_t memSize = createLabelCtx.fieldCnt * sizeof(SrPropertyT);
-    SrPropertyT *properties = (SrPropertyT *)KVMemAlloc(memSize);
+    SrPropertyT *properties = (SrPropertyT *)DbDynMemCtxAlloc(dbCtrl->memCtx, memSize);
     if (properties == NULL) {
+        DbDynMemCtxFree(dbCtrl->memCtx, labelName);
         log_error("DMSrCreateDb: properties alloc failed.");
         return GMERR_KV_MEMORY_ALLOC_FAILED;
     }
-    memset(properties, 0x00, memSize);
+    
     uint32_t fldOffset = 0;
     for (uint32_t i = 0; i < createLabelCtx.fieldCnt; i++) {
         SrPropertyT *property = &properties[i];

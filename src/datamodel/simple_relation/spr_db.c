@@ -25,6 +25,10 @@ Status SrCheckCreateDbArgs(SimpleRelExecCtxT *execCtx) {
     return GMERR_OK;
 }
 
+/**
+ * 創建DB
+ */
+
 Status DMSrCreateDb(QryStmtT *stmt) {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     Status ret = SrCheckCreateDbArgs(execCtx);
@@ -53,7 +57,8 @@ Status DMSrCreateDb(QryStmtT *stmt) {
     }
     // memset(dbCtrl.dbName, 0x00, strlen(execCtx->dbName) + 1);
     memcpy(dbCtrl.dbName, execCtx->dbName, strlen(execCtx->dbName) + 1);
-
+    dbCtrl.dbId = GenSrDbId();
+    dbCtrl.memCtx = dbMemCtx;
     DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT), dbMemCtx);
     // ret = DbVectorInit(&dbCtrl.labelCtrlList, sizeof(SrLabelT));
     // if (ret != GMERR_OK) {
@@ -61,8 +66,6 @@ Status DMSrCreateDb(QryStmtT *stmt) {
     //     log_error("DMSrCreateDb: DbVectorInit labelCtrlList failed.");
     //     return ret;
     // }
-    dbCtrl.dbId = GenSrDbId();
-
     ret = DbVectorAppendItem(&dbCtrlMgr->dbCtrlList, &dbCtrl);
     if (ret != GMERR_OK) {
         DbVectorDestroy(&dbCtrl.labelCtrlList);
@@ -101,6 +104,11 @@ Status DMSrDropDb(QryStmtT *stmt) {
         log_error("DMSrDropDb: DmGetDbCtrlByName failed.");
         return GMERR_DATAMODEL_SRDB_LIST_EXCEPT_NULL;
     }
+
+    // 删除所有表：
+
+
+    
     // DmClearSingleDbCtrl(dbCtrl);
     return RemoveDbCtrlByName(execCtx->dbName);
 }
