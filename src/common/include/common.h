@@ -53,6 +53,9 @@ typedef uint32_t Status;
 // 第三方库出错
 #define GMERR_JSON_LIB_ERROR 1000004
 
+// 工具类 map 出错
+#define GMERR_MAP_KEY_NOT_EXIST 1000200
+
 // memCtx 出错
 // 没有页可以分配了
 #define GMERR_MEMCTX_ERROR_NO_PAGE_ALLOC 1000500
