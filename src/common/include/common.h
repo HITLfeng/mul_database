@@ -50,11 +50,15 @@ typedef uint32_t Status;
 #define GMERR_KV_MEMORY_ALLOC_FAILED 1000003
 
 
+
+
+
 // 第三方库出错
 #define GMERR_JSON_LIB_ERROR 1000004
 
 // 工具类 map 出错
 #define GMERR_MAP_KEY_NOT_EXIST 1000200
+#define GMERR_MAP_NO_DATA 1000201
 
 // memCtx 出错
 // 没有页可以分配了

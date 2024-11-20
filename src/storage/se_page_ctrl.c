@@ -36,6 +36,28 @@
 //     uint32_t rowCurr; // 当前记录位置
 // } PageCtrlT;
 
+typedef struct HeapAddr {
+    uint32_t pageId;
+    uint32_t slotId;
+} HeapAddrT;
+
+
+// TODO: 不会存在空页，空页理论上会被马上回收
+typedef struct SePage {
+    void *nextPage;
+    void *pageAddr;
+    void *freeSlotList;
+    void *useSlotList; // 本页的，当找到尽头后，寻找下一页
+    uint32_t slotSize; // 每个槽位的大小
+} SePageT;
+
+typedef struct SePageCtrl {
+    uint32_t allPageCnt; // 当前的 page 总数 used + free
+    uint32_t usedPageCnt; // 当前的 used page 数
+    uint32_t freePageCnt; // 当前的 free page 数
+
+} SePageCtrlT;
+
 
 
 
