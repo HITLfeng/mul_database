@@ -10,8 +10,8 @@
 #define SE_INIT_PAGE_POOL_SIZE 360
 #define SE_PAGE_SIZE 4096
 
-// next addr + pre addr
-#define SE_PAGE_ROW_EXTRA_SIZE (sizeof(void *) + sizeof(void *))
+// next addr + pre addr + slotId
+#define SE_PAGE_ROW_EXTRA_SIZE (sizeof(void *) + sizeof(void *) + sizeof(uint32_t))
 
 // typedef struct SePageCtrl {
 //     uint32_t pageCnt; // 当前的页数
@@ -171,6 +171,41 @@ Status SeInitPageCtrl()
     return GMERR_OK;
 }
 
+void HeapSetSlotNextAddr(void *slot, void *addr)
+{
+    *(uint8_t **) slot = addr;
+}
+
+void HeapSetSlotPrevAddr(void *slot, void *addr)
+{
+    *(uint8_t * *)((uint8_t *) slot + sizeof(void *)) = addr;
+}
+
+void HeapSetSlotId(void *slot, uint32_t slotId)
+{
+    *(uint32_t * )((uint8_t *) slot + sizeof(void *) + sizeof(void *)) = slotId;
+}
+
+void *HeapGetSlotNextAddr(void *slot)
+{
+    return (void *) (*(uint8_t **) slot);
+}
+
+void *HeapGetSlotPrevAddr(void *slot)
+{
+    return (void *) (*(uint8_t * *)((uint8_t *) slot + sizeof(void *)));
+}
+
+uint32_t HeapGetSlotId(void *slot)
+{
+    return *(uint32_t * )((uint8_t *) slot + sizeof(void *) + sizeof(void *));
+}
+
+void *HeapGetDataPos(void *slot)
+{
+    return (void *) ((uint8_t *) slot + SE_PAGE_ROW_EXTRA_SIZE);
+}
+
 void HeapInitPage(HeapContainerT *container, SePageT *page)
 {
     memset(page->pageAddr, 0x00, SE_PAGE_SIZE);
@@ -187,18 +222,21 @@ void HeapInitPage(HeapContainerT *container, SePageT *page)
     void *currSlot = NULL;
     // 分割 page
     for (uint32_t i = 1; i < page->pageInfo.slotTotalCnt - 1; ++i) {
-        currSlot = (uint8_t *)page->pageAddr + i * page->pageInfo.slotSize;
+        currSlot = (uint8_t *) page->pageAddr + i * page->pageInfo.slotSize;
         // 设置 next addr
-        *(uint8_t **)currSlot = (uint8_t *)page->pageAddr + (i + 1) * page->pageInfo.slotSize;
+        HeapSetSlotNextAddr(currSlot, (uint8_t *) page->pageAddr + (i + 1) * page->pageInfo.slotSize);
         // 设置 prev addr
-        *(uint8_t **)((uint8_t *)currSlot + sizeof(void *)) = (uint8_t *)page->pageAddr + (i - 1) * page->pageInfo.slotSize;
+        HeapSetSlotPrevAddr(currSlot, (uint8_t *) page->pageAddr + (i - 1) * page->pageInfo.slotSize);
     }
     // 设置 第一个 和 最后一个 slot
     // 设置 next addr
-    *(uint8_t **)currSlot = page->pageAddr;
+    currSlot = page->pageAddr;
+    HeapSetSlotNextAddr(currSlot, (uint8_t *) page->pageAddr + page->pageInfo.slotSize);
+
     // 设置 prev addr
-    currSlot = (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 1) * page->pageInfo.slotSize;
-    *(uint8_t **)((uint8_t *)currSlot + sizeof(void *)) = (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 2) * page->pageInfo.slotSize;
+    currSlot = (uint8_t *) page->pageAddr + (page->pageInfo.slotTotalCnt - 1) * page->pageInfo.slotSize;
+    HeapSetSlotPrevAddr(currSlot,
+                        (uint8_t *) page->pageAddr + (page->pageInfo.slotTotalCnt - 2) * page->pageInfo.slotSize);
 }
 
 

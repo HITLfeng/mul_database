@@ -46,8 +46,8 @@ typedef struct HeapContainer {
     SePageT *pageList; // 当前container中申请到的页 链表形式报错
     uint32_t pageCnt; // 申请页的数量
 //    void *freeSlotList;
-    void *useSlotList; // 本页的，当找到尽头后，寻找下一页
-
+    void *useSlotList; // 记录链表
+    uint32_t recordCnt; // 记录数
     HeapLabelInfo labelInfo; // 打开该容器的表的信息
 } HeapContainerT;
 
@@ -59,6 +59,15 @@ typedef struct HeapContainer {
  * @return
  */
 Status HeapAllocAndInitNewPage(HeapContainerT *container);
+
+
+void HeapSetSlotNextAddr(void *slot, void *addr);
+void HeapSetSlotPrevAddr(void *slot, void *addr);
+void HeapSetSlotId(void *slot, uint32_t slotId);
+void *HeapGetSlotNextAddr(void *slot);
+void *HeapGetSlotPrevAddr(void *slot);
+void *HeapGetDataPos(void *slot);
+uint32_t HeapGetSlotId(void *slot);
 
 #ifdef __cplusplus
 }
