@@ -35,13 +35,15 @@ typedef enum {
     BUCKET_DELETE
 } BucketStateT;
 
-uint32_t DbHashUInt32(void *key) {
+uint32_t DbHashUInt32(void *key)
+{
     DB_POINT(key);
     uint32_t hashCode = *(uint32_t *) key;
     return hashCode;
 }
 
-uint32_t DbCmpUInt32(const void *key1, const void *key2) {
+uint32_t DbCmpUInt32(const void *key1, const void *key2)
+{
     DB_POINT2(key1, key2);
     if (*(const uint32_t *) key1 == *(const uint32_t *) key2) {
         return DB_HASH_CMP_EQUAL;
@@ -70,7 +72,8 @@ typedef struct DbHashMap {
     DbMemCtxT *memCtx;
 } DbHashMapT;
 
-Status DbHashMapCreate(DbHashMapT **map, HashCodeFuncT hashFunc, HashCmpFuncT hashCmpFunc, DbMemCtxT *memCtx) {
+Status DbHashMapCreate(DbHashMapT **map, HashCodeFuncT hashFunc, HashCmpFuncT hashCmpFunc, DbMemCtxT *memCtx)
+{
     DB_POINT3(map, hashFunc, memCtx);
     if (*map != NULL) {
         return;
@@ -99,7 +102,8 @@ Status DbHashMapCreate(DbHashMapT **map, HashCodeFuncT hashFunc, HashCmpFuncT ha
 }
 
 
-uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key) {
+uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key)
+{
     uint32_t hash = map->hashFunc(key);
     uint32_t pos = hash % (map->mapCapacity);
     // TODO: 这里好像不能直接用NULL来判断哈 申请的是结构体 考虑下怎么改！
@@ -109,13 +113,15 @@ uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key) {
     return pos;
 }
 
-uint32_t GetFirstHashPos(DbHashMapT *map, void *key) {
+uint32_t GetFirstHashPos(DbHashMapT *map, void *key)
+{
     uint32_t hash = map->hashFunc(key);
     uint32_t pos = hash % (map->mapCapacity);
     return pos;
 }
 
-Status DbHashMapExtend(DbHashMapT *map) {
+Status DbHashMapExtend(DbHashMapT *map)
+{
     DbBucketT *oldBuckets = map->buckets;
     uint32_t oldCapacity = map->mapCapacity;
     uint32_t newCapacity = map->mapCapacity * DB_HASH_MAP_EXTEND_STEP;
@@ -137,7 +143,18 @@ Status DbHashMapExtend(DbHashMapT *map) {
     return GMERR_OK;
 }
 
-Status DbHashMapInsert(DbHashMapT *map, void *key, void *value) {
+uint32_t DbHashGetSize(DbHashMapT *map)
+{
+    return map->bucketCnt;
+}
+
+uint32_t DbHashGetCapacity(DbHashMapT *map)
+{
+    return map->mapCapacity;
+}
+
+Status DbHashMapInsert(DbHashMapT *map, void *key, void *value)
+{
     DB_POINT3(map, key, value);
     Status ret = GMERR_OK;
     // 负载因子 0.6
@@ -155,7 +172,8 @@ Status DbHashMapInsert(DbHashMapT *map, void *key, void *value) {
     map->buckets[pos].state = BUCKET_USING;
 }
 
-bool DbIsBucketMatch(HashCmpFuncT hashCmpFunc, void *key1, void *key2) {
+bool DbIsBucketMatch(HashCmpFuncT hashCmpFunc, void *key1, void *key2)
+{
     uint32_t res = hashCmpFunc(key1, key2);
     if (res == DB_HASH_CMP_NOT_EQUAL) {
         return false;
@@ -163,7 +181,8 @@ bool DbIsBucketMatch(HashCmpFuncT hashCmpFunc, void *key1, void *key2) {
     return true;
 }
 
-void *DbHashMapFind(DbHashMapT *map, void *key) {
+void *DbHashMapFind(DbHashMapT *map, void *key)
+{
     uint32_t pos = GetFirstHashPos(map, key);
     uint32_t findTime = 0;
     while (map->buckets[pos].state != BUCKET_FREE) {
@@ -179,15 +198,17 @@ void *DbHashMapFind(DbHashMapT *map, void *key) {
 }
 
 // hash map delete 时释放 key value 内存 请保证这段内存申请自 map->memCtx
-Status DbHashMapDelete(DbHashMapT *map, void *key)
+Status DbHashMapDelete(DbHashMapT *map, void *key, bool isFreeMem)
 {
     uint32_t pos = GetFirstHashPos(map, key);
     uint32_t findTime = 0;
     while (map->buckets[pos].state != BUCKET_FREE) {
         DbBucketT *currBucket = &map->buckets[pos];
         if (DbIsBucketMatch(map->hashCmpFunc, currBucket->key, key)) {
-            DbDynMemCtxFree(map->memCtx, currBucket->key);
-            DbDynMemCtxFree(map->memCtx, currBucket->value);
+            if (isFreeMem) {
+                DbDynMemCtxFree(map->memCtx, currBucket->key);
+                DbDynMemCtxFree(map->memCtx, currBucket->value);
+            }
             currBucket->key = NULL;
             currBucket->value = NULL;
             currBucket->state = BUCKET_DELETE;

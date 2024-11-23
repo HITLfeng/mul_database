@@ -7,6 +7,11 @@
 // se层初始申请的页的个数 可动态扩容，不会缩容
 #define SE_INIT_PAGE_COUNT 5
 
+#define SE_INIT_PAGE_POOL_SIZE 360
+#define SE_PAGE_SIZE 4096
+
+// next addr + pre addr
+#define SE_PAGE_ROW_EXTRA_SIZE (sizeof(void *) + sizeof(void *))
 
 // typedef struct SePageCtrl {
 //     uint32_t pageCnt; // 当前的页数
@@ -41,23 +46,192 @@ typedef struct HeapAddr {
     uint32_t slotId;
 } HeapAddrT;
 
+/**
+ * README.md
+ *
+ *
+ * SE 模块设计思路
+ * 1. 申请 360 块 内存页 作为初始页 暂时不支持拓展 后续要拓展也是按照 360 为单位进行新增
+ * 2. 每页有两种状态 used | free
+ * 3. 每张 label 上关联的 container 会申请页 申请到的页 使用 page 指针串联起来 | 同时记录pageId 使用 map 存储 每个空闲页！
+ */
 
-// TODO: 不会存在空页，空页理论上会被马上回收
-typedef struct SePage {
-    void *nextPage;
-    void *pageAddr;
-    void *freeSlotList;
-    void *useSlotList; // 本页的，当找到尽头后，寻找下一页
-    uint32_t slotSize; // 每个槽位的大小
-} SePageT;
+
+
+
+
 
 typedef struct SePageCtrl {
     uint32_t allPageCnt; // 当前的 page 总数 used + free
     uint32_t usedPageCnt; // 当前的 used page 数
     uint32_t freePageCnt; // 当前的 free page 数
-
+    uint32_t pageSize; // 每页大小
+    DbHashMapT *freePagePool; // 空闲页池
+    DbHashMapT *usingPagePool; // 使用中的页池
 } SePageCtrlT;
 
+SePageCtrlT *g_sePageCtrl = NULL;
+
+SePageCtrlT *SeGetPageCtrlMng(void)
+{
+    DB_ASSERT(g_sePageCtrl);
+    return g_sePageCtrl;
+}
+
+//typedef uint32_t StatusInner; // SE内部错误码
+
+void InitSePage(SePageT *pageMng, void *page, uint32_t pageId)
+{
+    pageMng->nextPage = NULL;
+    pageMng->pageAddr = page;
+    pageMng->freeSlotList = NULL;
+    pageMng->useSlotList = NULL;
+    pageMng->pageId = pageId;
+    pageMng->slotSize = 0;
+}
+
+void SeInitPageCtrlInner(SePageT *pageMngList, void *pageList, DbHashMapT *freePagePool)
+{
+    for (uint32_t i = 0; i < SE_INIT_PAGE_POOL_SIZE; ++i) {
+        SePageT *pageMng = &pageMngList[i];
+        void *page = (uint8_t *) pageList + i * SE_SINGLE_PAGE_SIZE;
+        // 插入 freePagePool
+        InitSePage(pageMng, page, i);
+        uint32_t *pageId = (uint32_t *) DbDynMemCtxAlloc(freePagePool->memCtx, sizeof(uint32_t));
+        if (pageId == NULL) {
+            log_err("Alloc pageId failed. Alloc size id %u.", sizeof(uint32_t));
+            return GMERR_MEMORY_ALLOC_FAILED;
+        }
+        Status ret = DbHashMapInsert(freePagePool, pageId, pageMng);
+        DB_ASSERT(ret == GMERR_OK);
+    }
+    DB_ASSERT(DbHashGetSize(map) == SE_INIT_PAGE_POOL_SIZE);
+}
+
+Status SeInitPageCtrl()
+{
+    uint32_t pageMngSize = SE_INIT_PAGE_POOL_SIZE * sizeof(SePageT);
+    uint32_t pageSize = SE_INIT_PAGE_POOL_SIZE * SE_SINGLE_PAGE_SIZE;
+    // 1. 申请 SE_INIT_PAGE_POOL_SIZE 页 SePageT (sizeof(SePageT))
+    SePageT *pageMngList = (SePageT *) DbMalloc(pageMngSize);
+    if (pageMngList == NULL) {
+        log_err("Alloc pageMngList failed. Alloc size id %u.", pageMngSize);
+        return GMERR_MEMORY_ALLOC_FAILED;
+    }
+    // 2. 申请 SE_INIT_PAGE_POOL_SIZE 页 page (4096)
+    void *pageList = DbMalloc(pageSize);
+    if (pageList == NULL) {
+        log_err("Alloc pageList failed. Alloc size id %u.", pageSize);
+        return GMERR_MEMORY_ALLOC_FAILED;
+    }
+
+    // 3. 初始化
+    // 使用data MemCtx
+    DbMemCtxT *dataMemCtx = DbGetDataMemCtx();
+    DB_ASSERT(dataMemCtx != NULL);
+    // 创建freePagePool
+    DbHashMapT *freePagePool = NULL;
+
+    Status ret = DbHashMapCreate(&freePagePool, DbHashUInt32, DbCmpUInt32, dataMemCtx);
+    if (ret != GMERR_OK) {
+        DbFree(pageMngList);
+        DbFree(pageList);
+        DbMemCtxReset(dataMemCtx);
+        return ret;
+    }
+    SeInitPageCtrlInner(pageMngList, pageList, freePagePool);
+
+    // 创建 usingPagePool
+    DbHashMapT *usingPagePool = NULL;
+    Status ret = DbHashMapCreate(&usingPagePool, DbHashUInt32, DbCmpUInt32, dataMemCtx);
+    if (ret != GMERR_OK) {
+        DbFree(pageMngList);
+        DbFree(pageList);
+        DbMemCtxReset(dataMemCtx);
+        return ret;
+    }
+
+    // 4. 设置全局变量
+    SePageCtrlT *sePageCtrl = (SePageCtrlT *) DbDynMemCtxAlloc(dataMemCtx, sizeof(SePageCtrlT));
+    if (sePageCtrl == NULL) {
+        DbFree(pageMngList);
+        DbFree(pageList);
+        DbMemCtxReset(dataMemCtx);
+        return ret;
+    }
+
+    sePageCtrl->allPageCnt = SE_INIT_PAGE_POOL_SIZE;
+    sePageCtrl->freePageCnt = SE_INIT_PAGE_POOL_SIZE;
+    sePageCtrl->usedPageCnt = 0;
+    sePageCtrl->pageSize = SE_PAGE_SIZE;
+    sePageCtrl->freePagePool = freePagePool;
+    sePageCtrl->usingPagePool = usingPagePool;
+
+    // 初始化完成
+    return GMERR_OK;
+}
+
+void HeapInitPage(HeapContainerT *container, SePageT *page)
+{
+    memset(page->pageAddr, 0x00, SE_PAGE_SIZE);
+    page->pageInfo = (SePageInfoT) {0};
+    page->pageInfo.recordSize = container->labelInfo.recordLen;
+    page->pageInfo.slotSize = page->pageInfo.recordSize + SE_PAGE_ROW_EXTRA_SIZE;
+    page->pageInfo.slotTotalCnt = SE_PAGE_SIZE / page->pageInfo.slotSize;
+
+    DB_ASSERT(page->pageInfo.slotTotalCnt >= 2);
+    page->pageInfo.slotFreeCnt = page->pageInfo.slotTotalCnt;
+    page->pageInfo.slotUsedCnt = 0;
+    page->pageInfo.nextFreeSlot = page->pageAddr; // free 指向 页起始地址
+
+    void *currSlot = NULL;
+    // 分割 page
+    for (uint32_t i = 1; i < page->pageInfo.slotTotalCnt - 1; ++i) {
+        currSlot = (uint8_t *)page->pageAddr + i * page->pageInfo.slotSize;
+        // 设置 next addr
+        *(uint8_t **)currSlot = (uint8_t *)page->pageAddr + (i + 1) * page->pageInfo.slotSize;
+        // 设置 prev addr
+        *(uint8_t **)((uint8_t *)currSlot + sizeof(void *)) = (uint8_t *)page->pageAddr + (i - 1) * page->pageInfo.slotSize;
+    }
+    // 设置 第一个 和 最后一个 slot
+    // 设置 next addr
+    *(uint8_t **)currSlot = page->pageAddr;
+    // 设置 prev addr
+    currSlot = (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 1) * page->pageInfo.slotSize;
+    *(uint8_t **)((uint8_t *)currSlot + sizeof(void *)) = (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 2) * page->pageInfo.slotSize;
+}
 
 
+Status HeapAllocAndInitNewPage(HeapContainerT *container, SePageT **outPage)
+{
+    SePageCtrlT *pageCtrl = SeGetPageCtrlMng();
+    uint32_t *pageId = NULL;
+    SePageT *curPage = NULL;
+    DbHashMapIter mapIter = 0;
+    Status ret = DbHashMapFetch(pageCtrl->freePagePool, (void **) &pageId, (void **) &curPage, &mapIter);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
 
+    // 初始化 page
+    HeapInitPage(container, curPage);
+    // 挂载 page 到container
+    curPage->nextPage = container->pageList;
+    container->pageList = curPage;
+    container->pageCnt++;
+    // 删除 map 对应元素
+    ret = DbHashMapDelete(pageCtrl->freePagePool, pageId, false); // 删除时不释放内存！
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+    // 插入到使用 页池
+    ret = DbHashMapInsert(pageCtrl->usingPagePool, pageId, curPage);
+    if (ret != GMERR_OK) {
+        // 尝试重新插入 free mapPool
+        Status retryRet = DbHashMapInsert(pageCtrl->freePagePool, pageId, curPage);
+        DB_ASSERT(retryRet == GMERR_OK);
+        return ret;
+    }
+    *outPage = curPage;
+    return GMERR_OK;
+}

@@ -21,6 +21,10 @@ DbMemCtxT *DbGetTopMemCtx();
 DbMemCtxT *DbGetMetaMemCtx();
 DbMemCtxT *DbGetDataMemCtx();
 
+// 原生 malloc free
+void *DbMalloc(uint32_t allocSize);
+void DbFree(void *ptr);
+
 #ifdef __cplusplus
 }
 #endif

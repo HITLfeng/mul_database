@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include "common.h"
 
+// 对外接口 使用 SE 开头
+
 #ifdef __cplusplus
 extern "C" {
 #endif
