@@ -14,7 +14,7 @@ SePageT *HeapContainerGetPage(HeapContainerT *container)
     }
     SePageT *currPage = container->pageList;
     while (currPage != NULL) {
-        if (currPage->slotFreeCnt != 0) {
+        if (currPage->pageInfo.slotFreeCnt > 0) {
             return currPage;
         }
         currPage = currPage->nextPage;

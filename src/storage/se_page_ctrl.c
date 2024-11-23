@@ -1,6 +1,5 @@
 #include "se_common.h"
 
-
 // se层page使用页管理 一页 4096 bytes
 #define SE_SINGLE_PAGE_SIZE 4096
 
@@ -20,8 +19,6 @@
 //     uint32_t pageFree; // 未使用页数
 
 // } SePageCtrlT;
-
-
 
 // 页管理
 // typedef struct PageCtrl {
@@ -53,75 +50,70 @@ typedef struct HeapAddr {
  * SE 模块设计思路
  * 1. 申请 360 块 内存页 作为初始页 暂时不支持拓展 后续要拓展也是按照 360 为单位进行新增
  * 2. 每页有两种状态 used | free
- * 3. 每张 label 上关联的 container 会申请页 申请到的页 使用 page 指针串联起来 | 同时记录pageId 使用 map 存储 每个空闲页！
+ * 3. 每张 label 上关联的 container 会申请页 申请到的页 使用 page 指针串联起来 | 同时记录pageId 使用 map 存储
+ * 每个空闲页！
  */
 
-
-
-
-
-
 typedef struct SePageCtrl {
-    uint32_t allPageCnt; // 当前的 page 总数 used + free
-    uint32_t usedPageCnt; // 当前的 used page 数
-    uint32_t freePageCnt; // 当前的 free page 数
-    uint32_t pageSize; // 每页大小
-    DbHashMapT *freePagePool; // 空闲页池
+    uint32_t allPageCnt;       // 当前的 page 总数 used + free
+    uint32_t usedPageCnt;      // 当前的 used page 数
+    uint32_t freePageCnt;      // 当前的 free page 数
+    uint32_t pageSize;         // 每页大小
+    DbHashMapT *freePagePool;  // 空闲页池
     DbHashMapT *usingPagePool; // 使用中的页池
 } SePageCtrlT;
 
 SePageCtrlT *g_sePageCtrl = NULL;
 
-SePageCtrlT *SeGetPageCtrlMng(void)
-{
+SePageCtrlT *SeGetPageCtrlMng(void) {
     DB_ASSERT(g_sePageCtrl);
     return g_sePageCtrl;
 }
 
-//typedef uint32_t StatusInner; // SE内部错误码
+// typedef uint32_t StatusInner; // SE内部错误码
 
-void InitSePage(SePageT *pageMng, void *page, uint32_t pageId)
-{
+void InitSePage(SePageT *pageMng, void *page, uint32_t pageId) {
     pageMng->nextPage = NULL;
     pageMng->pageAddr = page;
-    pageMng->freeSlotList = NULL;
-    pageMng->useSlotList = NULL;
     pageMng->pageId = pageId;
-    pageMng->slotSize = 0;
+    pageMng->pageInfo = (SePageInfoT){0};
+    // pageMng->useSlotList = NULL;
+    // pageMng->freeSlotList = NULL;
+    // pageMng->slotSize = 0;
 }
 
-void SeInitPageCtrlInner(SePageT *pageMngList, void *pageList, DbHashMapT *freePagePool)
-{
+void SeInitPageCtrlInner(SePageT *pageMngList, void *pageList, DbHashMapT *freePagePool) {
     for (uint32_t i = 0; i < SE_INIT_PAGE_POOL_SIZE; ++i) {
         SePageT *pageMng = &pageMngList[i];
-        void *page = (uint8_t *) pageList + i * SE_SINGLE_PAGE_SIZE;
+        void *page = (uint8_t *)pageList + i * SE_SINGLE_PAGE_SIZE;
         // 插入 freePagePool
         InitSePage(pageMng, page, i);
-        uint32_t *pageId = (uint32_t *) DbDynMemCtxAlloc(freePagePool->memCtx, sizeof(uint32_t));
+        uint32_t *pageId = (uint32_t *)DbDynMemCtxAlloc(freePagePool->memCtx, sizeof(uint32_t));
         if (pageId == NULL) {
-            log_err("Alloc pageId failed. Alloc size id %u.", sizeof(uint32_t));
-            return GMERR_MEMORY_ALLOC_FAILED;
+            log_error("Alloc pageId failed. Alloc size id %u.", sizeof(uint32_t));
+            DB_ASSERT(false);
+            return;
+            // return GMERR_MEMORY_ALLOC_FAILED;
         }
         Status ret = DbHashMapInsert(freePagePool, pageId, pageMng);
         DB_ASSERT(ret == GMERR_OK);
     }
-    DB_ASSERT(DbHashGetSize(map) == SE_INIT_PAGE_POOL_SIZE);
+    DB_ASSERT(DbHashGetSize(freePagePool) == SE_INIT_PAGE_POOL_SIZE);
 }
 
-Status SeInitPageCtrl()
-{
+Status SeInitPageCtrl() {
     uint32_t pageMngSize = SE_INIT_PAGE_POOL_SIZE * sizeof(SePageT);
     uint32_t pageSize = SE_INIT_PAGE_POOL_SIZE * SE_SINGLE_PAGE_SIZE;
     // 1. 申请 SE_INIT_PAGE_POOL_SIZE 页 SePageT (sizeof(SePageT))
-    SePageT *pageMngList = (SePageT *) DbMalloc(pageMngSize);
+    SePageT *pageMngList = (SePageT *)DbMalloc(pageMngSize);
     if (pageMngList == NULL) {
-        log_err("Alloc pageMngList failed. Alloc size id %u.", pageMngSize);
+        log_error("Alloc pageMngList failed. Alloc size id %u.", pageMngSize);
         return GMERR_MEMORY_ALLOC_FAILED;
     }
     // 2. 申请 SE_INIT_PAGE_POOL_SIZE 页 page (4096)
     void *pageList = DbMalloc(pageSize);
     if (pageList == NULL) {
-        log_err("Alloc pageList failed. Alloc size id %u.", pageSize);
+        log_error("Alloc pageList failed. Alloc size id %u.", pageSize);
         return GMERR_MEMORY_ALLOC_FAILED;
     }
 
@@ -143,7 +135,7 @@ Status SeInitPageCtrl()
 
     // 创建 usingPagePool
     DbHashMapT *usingPagePool = NULL;
-    Status ret = DbHashMapCreate(&usingPagePool, DbHashUInt32, DbCmpUInt32, dataMemCtx);
+    ret = DbHashMapCreate(&usingPagePool, DbHashUInt32, DbCmpUInt32, dataMemCtx);
     if (ret != GMERR_OK) {
         DbFree(pageMngList);
         DbFree(pageList);
@@ -152,7 +144,7 @@ Status SeInitPageCtrl()
     }
 
     // 4. 设置全局变量
-    SePageCtrlT *sePageCtrl = (SePageCtrlT *) DbDynMemCtxAlloc(dataMemCtx, sizeof(SePageCtrlT));
+    SePageCtrlT *sePageCtrl = (SePageCtrlT *)DbDynMemCtxAlloc(dataMemCtx, sizeof(SePageCtrlT));
     if (sePageCtrl == NULL) {
         DbFree(pageMngList);
         DbFree(pageList);
@@ -171,45 +163,25 @@ Status SeInitPageCtrl()
     return GMERR_OK;
 }
 
-void HeapSetSlotNextAddr(void *slot, void *addr)
-{
-    *(uint8_t **) slot = addr;
+void HeapSetSlotNextAddr(void *slot, void *addr) { *(uint8_t **)slot = addr; }
+
+void HeapSetSlotPrevAddr(void *slot, void *addr) { *(uint8_t **)((uint8_t *)slot + sizeof(void *)) = addr; }
+
+void HeapSetSlotId(void *slot, uint32_t slotId) {
+    *(uint32_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *)) = slotId;
 }
 
-void HeapSetSlotPrevAddr(void *slot, void *addr)
-{
-    *(uint8_t * *)((uint8_t *) slot + sizeof(void *)) = addr;
-}
+void *HeapGetSlotNextAddr(void *slot) { return (void *)(*(uint8_t **)slot); }
 
-void HeapSetSlotId(void *slot, uint32_t slotId)
-{
-    *(uint32_t * )((uint8_t *) slot + sizeof(void *) + sizeof(void *)) = slotId;
-}
+void *HeapGetSlotPrevAddr(void *slot) { return (void *)(*(uint8_t **)((uint8_t *)slot + sizeof(void *))); }
 
-void *HeapGetSlotNextAddr(void *slot)
-{
-    return (void *) (*(uint8_t **) slot);
-}
+uint32_t HeapGetSlotId(void *slot) { return *(uint32_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *)); }
 
-void *HeapGetSlotPrevAddr(void *slot)
-{
-    return (void *) (*(uint8_t * *)((uint8_t *) slot + sizeof(void *)));
-}
+void *HeapGetDataPos(void *slot) { return (void *)((uint8_t *)slot + SE_PAGE_ROW_EXTRA_SIZE); }
 
-uint32_t HeapGetSlotId(void *slot)
-{
-    return *(uint32_t * )((uint8_t *) slot + sizeof(void *) + sizeof(void *));
-}
-
-void *HeapGetDataPos(void *slot)
-{
-    return (void *) ((uint8_t *) slot + SE_PAGE_ROW_EXTRA_SIZE);
-}
-
-void HeapInitPage(HeapContainerT *container, SePageT *page)
-{
+void HeapInitPage(HeapContainerT *container, SePageT *page) {
     memset(page->pageAddr, 0x00, SE_PAGE_SIZE);
-    page->pageInfo = (SePageInfoT) {0};
+    page->pageInfo = (SePageInfoT){0};
     page->pageInfo.recordSize = container->labelInfo.recordLen;
     page->pageInfo.slotSize = page->pageInfo.recordSize + SE_PAGE_ROW_EXTRA_SIZE;
     page->pageInfo.slotTotalCnt = SE_PAGE_SIZE / page->pageInfo.slotSize;
@@ -222,31 +194,29 @@ void HeapInitPage(HeapContainerT *container, SePageT *page)
     void *currSlot = NULL;
     // 分割 page
     for (uint32_t i = 1; i < page->pageInfo.slotTotalCnt - 1; ++i) {
-        currSlot = (uint8_t *) page->pageAddr + i * page->pageInfo.slotSize;
+        currSlot = (uint8_t *)page->pageAddr + i * page->pageInfo.slotSize;
         // 设置 next addr
-        HeapSetSlotNextAddr(currSlot, (uint8_t *) page->pageAddr + (i + 1) * page->pageInfo.slotSize);
+        HeapSetSlotNextAddr(currSlot, (uint8_t *)page->pageAddr + (i + 1) * page->pageInfo.slotSize);
         // 设置 prev addr
-        HeapSetSlotPrevAddr(currSlot, (uint8_t *) page->pageAddr + (i - 1) * page->pageInfo.slotSize);
+        HeapSetSlotPrevAddr(currSlot, (uint8_t *)page->pageAddr + (i - 1) * page->pageInfo.slotSize);
     }
     // 设置 第一个 和 最后一个 slot
     // 设置 next addr
     currSlot = page->pageAddr;
-    HeapSetSlotNextAddr(currSlot, (uint8_t *) page->pageAddr + page->pageInfo.slotSize);
+    HeapSetSlotNextAddr(currSlot, (uint8_t *)page->pageAddr + page->pageInfo.slotSize);
 
     // 设置 prev addr
-    currSlot = (uint8_t *) page->pageAddr + (page->pageInfo.slotTotalCnt - 1) * page->pageInfo.slotSize;
+    currSlot = (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 1) * page->pageInfo.slotSize;
     HeapSetSlotPrevAddr(currSlot,
-                        (uint8_t *) page->pageAddr + (page->pageInfo.slotTotalCnt - 2) * page->pageInfo.slotSize);
+                        (uint8_t *)page->pageAddr + (page->pageInfo.slotTotalCnt - 2) * page->pageInfo.slotSize);
 }
 
-
-Status HeapAllocAndInitNewPage(HeapContainerT *container, SePageT **outPage)
-{
+Status HeapAllocAndInitNewPage(HeapContainerT *container, SePageT **outPage) {
     SePageCtrlT *pageCtrl = SeGetPageCtrlMng();
     uint32_t *pageId = NULL;
     SePageT *curPage = NULL;
     DbHashMapIter mapIter = 0;
-    Status ret = DbHashMapFetch(pageCtrl->freePagePool, (void **) &pageId, (void **) &curPage, &mapIter);
+    Status ret = DbHashMapFetch(pageCtrl->freePagePool, (void **)&pageId, (void **)&curPage, &mapIter);
     if (ret != GMERR_OK) {
         return ret;
     }
