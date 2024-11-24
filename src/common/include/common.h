@@ -101,6 +101,8 @@ typedef uint32_t Status;
 #define GMERR_STORAGE_MEMPOOL_INIT_FAILED 3001001
 #define GMERR_STORAGE_MEMCTX_INIT_FAILED 3001002
 
+#define GMERR_STORAGE_PAGE_CTRL_INIT_FAILED 3001003
+
 // ****************************************
 // DATAMODEL 模块错误码
 // ****************************************

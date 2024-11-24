@@ -25,6 +25,19 @@ void SEFixedHeapInit(FixedHeapT *heap, uint32_t rowSize);
 
 void SEFixedHeapInsertRow(FixedHeapT *heap, void *rowBuf);
 
+
+
+
+typedef struct SERunCtx {
+
+} SERunCtxT;
+
+
+/**
+ * 服务器第一次拉起时调用 初始化表内存
+ */
+Status SeInitPageCtrl(void);
+
 #ifdef __cplusplus
 }
 #endif

@@ -99,6 +99,11 @@ Status MainWorkerStart() {
         return GMERR_STORAGE_MEMCTX_INIT_FAILED;
     }
 
+    if (SeInitPageCtrl() != GMERR_OK) {
+        log_error("MainWorkerStart, SeInitPageCtrl failed");
+        return GMERR_STORAGE_PAGE_CTRL_INIT_FAILED;
+    }
+
 #if MEMCTX_TEST_ON
     TestBasicAlloc();
 #endif

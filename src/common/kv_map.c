@@ -43,6 +43,7 @@ Status DbHashMapCreate(DbHashMapT **map, HashCodeFuncT hashFunc, HashCmpFuncT ha
     tmpMap->hashCmpFunc = hashCmpFunc;
     tmpMap->bucketCnt = 0;
 //    tmpMap->elementCnt = 0;
+    *map = tmpMap;
     return GMERR_OK;
 }
 
@@ -51,9 +52,11 @@ uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key)
 {
     uint32_t hash = map->hashFunc(key);
     uint32_t pos = hash % (map->mapCapacity);
+    uint32_t originPos = pos;
     // TODO: 这里好像不能直接用NULL来判断哈 申请的是结构体 考虑下怎么改！
     while (map->buckets[pos].state != BUCKET_FREE) {
         pos = (pos + 1) % map->mapCapacity;
+        DB_ASSERT(pos != originPos);
     }
     return pos;
 }
@@ -75,11 +78,20 @@ Status DbHashMapExtend(DbHashMapT *map)
         log_error("alloc buckets failed and alloc size is %u.", newCapacity * sizeof(DbBucketT));
         return GMERR_MEMCTX_DYN_ALLOC_FAILED;
     }
+    // 初始化 new buckets
+    for (uint32_t i = 0; i < newCapacity; ++i) {
+        buckets[i].key = NULL;
+        buckets[i].value = NULL;
+        buckets[i].state = BUCKET_FREE;
+    }
     map->mapCapacity = newCapacity;
     map->buckets = buckets;
 
     // reHash
     for (uint32_t i = 0; i < oldCapacity; ++i) {
+        if (oldBuckets[i].state == BUCKET_FREE) {
+            continue;
+        }
         // TODO: 重点排查这里有没有问题
         DbBucketT currBucket = oldBuckets[i];
         uint32_t pos = GetNextFreeHashPos(map, currBucket.key);
@@ -105,6 +117,9 @@ Status DbHashMapInsert(DbHashMapT *map, void *key, void *value)
     map->buckets[pos].key = key;
     map->buckets[pos].value = value;
     map->buckets[pos].state = BUCKET_USING;
+    map->bucketCnt++;
+
+    return GMERR_OK;
 }
 
 bool DbIsBucketMatch(HashCmpFuncT hashCmpFunc, void *key1, void *key2)
