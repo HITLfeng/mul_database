@@ -26,11 +26,12 @@ void SEFixedHeapInit(FixedHeapT *heap, uint32_t rowSize);
 void SEFixedHeapInsertRow(FixedHeapT *heap, void *rowBuf);
 
 
+/**
+ * 建立一个 map 
+ * key: labelId value: container
+ */
 
 
-typedef struct SERunCtx {
-
-} SERunCtxT;
 
 
 /**

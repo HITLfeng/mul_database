@@ -53,6 +53,16 @@ typedef struct HeapContainer {
 
 //void *SeGetPageCtrlMng(void);
 
+typedef struct LabelCursor {
+    uint32_t labelId;
+    HeapContainerT *container;
+} LabelCursorT;
+
+
+typedef struct SERunCtx {
+    DbHashMapT *containerMap; // 存储 labelId: container    
+} SERunCtxT;
+
 /**
  *
  * @param container 为当前容器申请新的 page
