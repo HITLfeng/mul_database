@@ -8,6 +8,7 @@
 #include "db_memctx.h"
 #include "se_out_function.h"
 #include "interface_common.h"
+#include "ee_out_function.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +45,7 @@ typedef struct SrLabel
     uint32_t fieldCnt;       // feild 个数
     SrPropertyT *properties; // 属性数组
     FixedHeapT heapRow; // 存储记录数
+    uint32_t recordLen; // 记录长度 TODO: 还没有赋值
 } SrLabelT;
 
 
@@ -84,6 +86,11 @@ Status DMSrQueryTable(QryStmtT *stmt);
 
 Status DMExecSysviewEdit(QryStmtT *stmt);
 
+
+
+// ========================================
+Status DMCreateTable(QryStmtT *stmt);
+Status DMInsertData(QryStmtT *stmt);
 
 
 

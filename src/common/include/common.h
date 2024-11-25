@@ -59,6 +59,7 @@ typedef uint32_t Status;
 // 工具类 map 出错
 #define GMERR_MAP_KEY_NOT_EXIST 1000200
 #define GMERR_MAP_NO_DATA 1000201
+#define GMERR_MAP_DATA_CONFLICT 1000202
 
 // memCtx 出错
 // 没有页可以分配了
@@ -97,11 +98,15 @@ typedef uint32_t Status;
 #define GMERR_CLIENT_MEMORY_ALLOC_FAILED 2001007
 
 
+// ****************************************
 // STORAGE 模块错误码
+// ****************************************
 #define GMERR_STORAGE_MEMPOOL_INIT_FAILED 3001001
 #define GMERR_STORAGE_MEMCTX_INIT_FAILED 3001002
 
 #define GMERR_STORAGE_PAGE_CTRL_INIT_FAILED 3001003
+// label id 对应的 container 不存在
+#define GMERR_STORAGE_CONTAINER_NOT_EXIST 3001004
 
 // ****************************************
 // DATAMODEL 模块错误码

@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include "common.h"
+#include "db_memctx.h"
+#include "common.h"
+#include "kv_map.h"
 
 // 对外接口 使用 SE 开头
 
@@ -31,13 +34,39 @@ void SEFixedHeapInsertRow(FixedHeapT *heap, void *rowBuf);
  * key: labelId value: container
  */
 
+typedef struct SERunCtx {
+    DbHashMapT *containerMap; // 存储 labelId: container
+    DbMemCtxT *memCtx;
+} SERunCtxT;
 
-
+SERunCtxT *SEGetRunCtx();
 
 /**
  * 服务器第一次拉起时调用 初始化表内存
  */
 Status SeInitPageCtrl(void);
+
+/**
+ * 给表创建一个容器 用于存储数据
+ * @param label 要创建容器的表
+ * @return
+ */
+Status HeapContainerCreate(SrLabelT *label);
+
+typedef struct HeapAddr {
+    uint32_t pageId;
+    uint32_t slotId;
+} HeapAddrT;
+
+
+/**
+ * SE 层对其他模块提供的重要接口 往表中插入一条数据
+ * @param labelId 【IN】要插入的表的ID
+ * @param dataBuf 【IN】要插入的用户数据
+ * @param addr    【OUT】出参，返回记录的地址 传入 [NULL] 则不做处理！
+ * @return
+ */
+Status SEHeapInsertRow(uint32_t labelId, uint8_t *dataBuf, HeapAddrT *addr);
 
 #ifdef __cplusplus
 }

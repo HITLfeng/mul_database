@@ -6,6 +6,8 @@
 #include "db_memctx.h"
 #include "common.h"
 #include "kv_map.h"
+#include "se_out_function.h"
+#include "spr_common.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -59,9 +61,15 @@ typedef struct LabelCursor {
 } LabelCursorT;
 
 
-typedef struct SERunCtx {
-    DbHashMapT *containerMap; // 存储 labelId: container    
-} SERunCtxT;
+
+
+
+/**
+ * 暂不对外提供 在外部接口 SeInitPageCtrl 内部调用
+* 初始化 全局 存储运行上下文
+* 使用 dataMemCtx
+*/
+Status SEInitRunCtx(void);
 
 /**
  *

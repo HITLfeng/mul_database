@@ -158,7 +158,11 @@ Status SeInitPageCtrl() {
     sePageCtrl->pageSize = SE_PAGE_SIZE;
     sePageCtrl->freePagePool = freePagePool;
     sePageCtrl->usingPagePool = usingPagePool;
-
+    // 初始化 runCtx
+    ret = SEInitRunCtx();
+    if (ret != GMERR_OK) {
+        return ret;
+    }
     // 初始化完成
     return GMERR_OK;
 }

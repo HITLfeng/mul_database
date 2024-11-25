@@ -1,4 +1,4 @@
-#include "include/spr_common.h"
+#include "spr_common.h"
 #include "kv_json.h"
 #include "db_memctx.h"
 
@@ -368,5 +368,123 @@ Status DMExecSysviewEdit(QryStmtT *stmt) {
         }
     }
 
+    return GMERR_OK;
+}
+
+
+
+/**
+* 改为使用最新的SE接口
+*/
+Status DMCreateTable(QryStmtT *stmt) {
+    // 首先获取DbCtrl
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
+
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("DMSrCreateTable: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    Status ret = SrCheckCreateTableArgs(execCtx);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+
+    SrCreateLabelCtxT createLabelCtx = {0};
+    ret = SrParseCreateLabelJson(execCtx->labelJson, &createLabelCtx);
+    if (ret != GMERR_OK) {
+        log_error("Parse label json failed.");
+        return ret;
+    }
+
+    if (IsLabelNameExist(dbCtrl, createLabelCtx.labelName)) {
+        log_error("DMSrCreateTable: labelName is exist.");
+        return GMERR_DATAMODEL_SRLABEL_NAME_EXISTED;
+    }
+
+    SrLabelT labelCtrl = {0};
+    char *labelName = (char *)DbDynMemCtxAlloc(dbCtrl->memCtx, strlen(createLabelCtx.labelName) + 1);
+    if (labelName == NULL) {
+        log_error("DMSrCreateDb: labelName alloc failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    strcpy(labelName, createLabelCtx.labelName);
+
+    uint32_t memSize = createLabelCtx.fieldCnt * sizeof(SrPropertyT);
+    SrPropertyT *properties = (SrPropertyT *)DbDynMemCtxAlloc(dbCtrl->memCtx, memSize);
+    if (properties == NULL) {
+        DbDynMemCtxFree(dbCtrl->memCtx, labelName);
+        log_error("DMSrCreateDb: properties alloc failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+
+    uint32_t fldOffset = 0;
+    for (uint32_t i = 0; i < createLabelCtx.fieldCnt; i++) {
+        SrPropertyT *property = &properties[i];
+        // char *fieldName = (char *)KVMemAlloc(strlen(createLabelCtx.properties[i].fieldName) + 1);
+        // if (fieldName == NULL) {
+        //     log_error("DMSrCreateDb: fieldName alloc failed.");
+        //     return GMERR_KV_MEMORY_ALLOC_FAILED;
+        // }
+        strcpy(property->fieldName, createLabelCtx.properties[i].fieldName);
+        property->fieldSize = createLabelCtx.properties[i].fieldSize;
+        property->fieldType = createLabelCtx.properties[i].fieldType;
+        property->fldOffset = fldOffset;
+        fldOffset += property->fieldSize;
+    }
+    labelCtrl.properties = properties;
+    labelCtrl.fieldCnt = createLabelCtx.fieldCnt;
+    labelCtrl.labelId = GenSrTableId();
+    labelCtrl.dbId = execCtx->dbId;
+    labelCtrl.labelName = labelName;
+
+    // 创建容器 TODO: 这些流程全部放到EE层 移出模型层
+    ret = EECreateLabelContainer(labelCtrl);
+    if (ret != GMERR_OK) {
+        log_error("labelCtrl create container failed.");
+        return ret;
+    }
+
+    ret = DbVectorAppendItem(&dbCtrl->labelCtrlList, &labelCtrl);
+    if (ret != GMERR_OK) {
+        log_error("DbVectorAppend labelCtrl failed.");
+        return ret;
+    }
+
+    // 设置返回结果
+    uint32_t retEntryBufLen = sizeof(uint32_t);
+    void *retEntry = (void *)DbDynMemCtxAlloc(stmt->memCtx, retEntryBufLen);
+    if (retEntry == NULL) {
+        log_error("DMSrCreateTable: KVMemAlloc retEntry failed.");
+        return GMERR_KV_MEMORY_ALLOC_FAILED;
+    }
+    memset(retEntry, 0, retEntryBufLen);
+    *((uint32_t *)retEntry) = labelCtrl.labelId;
+    stmt->retEntry = retEntry;
+    stmt->retEntryBufLen = retEntryBufLen;
+
+    return GMERR_OK;
+}
+
+Status DMInsertData(QryStmtT *stmt) {
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
+    // 找 dbId 是否存在
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("DMSrInsertData: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    // 找 labelId 是否存在
+    SrLabelT *labelCtrl = DmGetLabelCtrlByLabelId(dbCtrl, execCtx->labelId);
+    if (labelCtrl == NULL) {
+        log_error("DMSrInsertData: get labelCtrl failed.");
+        return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
+    }
+    Status ret = SEHeapInsertRow(labelCtrl->labelId, execCtx->insertData, NULL);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
     return GMERR_OK;
 }

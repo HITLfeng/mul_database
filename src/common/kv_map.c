@@ -48,13 +48,18 @@ Status DbHashMapCreate(DbHashMapT **map, HashCodeFuncT hashFunc, HashCmpFuncT ha
 }
 
 
-uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key)
+uint32_t GetNextFreeHashPos(DbHashMapT *map, void *key, bool *isHashCollision)
 {
+    *isHashCollision = false;
     uint32_t hash = map->hashFunc(key);
     uint32_t pos = hash % (map->mapCapacity);
     uint32_t originPos = pos;
     // TODO: 这里好像不能直接用NULL来判断哈 申请的是结构体 考虑下怎么改！
     while (map->buckets[pos].state != BUCKET_FREE) {
+        if (map->buckets[pos].key == key) {
+            *isHashCollision = true;
+            break;
+        }
         pos = (pos + 1) % map->mapCapacity;
         DB_ASSERT(pos != originPos);
     }
@@ -111,8 +116,12 @@ Status DbHashMapInsert(DbHashMapT *map, void *key, void *value)
             return ret;
         }
     }
-
-    uint32_t pos = GetNextFreeHashPos(map, key);
+    bool isConflict = false;
+    uint32_t pos = GetNextFreeHashPos(map, key, &isConflict);
+    if (isConflict) {
+        log_error("hash same key exist.");
+        return GMERR_MAP_DATA_CONFLICT;
+    }
     DB_ASSERT(pos >= 0 && pos < map->mapCapacity);
     map->buckets[pos].key = key;
     map->buckets[pos].value = value;

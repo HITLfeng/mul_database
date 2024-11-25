@@ -1,5 +1,41 @@
 #include "se_common.h"
 
+void InitContainerWithLaebl(HeapContainerT *container, SrLabelT *label)
+{
+    container->pageList = NULL;
+    container->pageCnt = 0;
+    container->useSlotList = NULL;
+    container->recordCnt = 0;
+    container->labelInfo.dbId = label->dbId;
+    container->labelInfo.labelId = label->labelId;
+    container->labelInfo.recordLen = label->recordLen;
+}
+
+Status HeapContainerCreate(SrLabelT *label)
+{
+    // 获取运行上下文
+    SERunCtxT *runCtx = SEGetRunCtx();
+
+    // TODO: HERE jixu xie 202411242207
+    HeapContainerT *container = (HeapContainerT *) DbDynMemCtxAlloc(runCtx->memCtx, sizeof(HeapContainerT));
+    if (container == NULL) {
+        log_error("Alloc container failed. Alloc size id %u.", sizeof(HeapContainerT));
+        return GMERR_MEMORY_ALLOC_FAILED;
+    }
+    InitContainerWithLaebl(container, label);
+
+    uint32_t * pageId = (uint32_t * )
+    DbDynMemCtxAlloc(runCtx->memCtx, sizeof(uint32_t));
+    if (pageId == NULL) {
+        log_error("Alloc container failed. Alloc size id %u.", sizeof(uint32_t));
+        return GMERR_MEMORY_ALLOC_FAILED;
+    }
+    *pageId = label->labelId;
+
+    // 插入 container map
+    return DbHashMapInsert(runCtx->containerMap, pageId, container);
+}
+
 // 每个 label 对应一个 container
 
 
@@ -47,7 +83,7 @@ void *HeapGetPageFreeSlot(SePageT *page)
     return freeSlot;
 }
 
-Status HeapInsert(HeapContainerT *container, void *dataBuf)
+Status HeapInsert(HeapContainerT *container, void *dataBuf, HeapAddrT *addr)
 {
     Status ret = GMERR_OK;
     // 1.判断是否需要 申请新的页下来
@@ -84,9 +120,35 @@ Status HeapInsert(HeapContainerT *container, void *dataBuf)
     }
     // 5.更新 container 相关结构体内容
     container->recordCnt++;
+
+    // 6.赋值 ADDR
+    if (addr != NULL) {
+        addr->pageId = page->pageId;
+        addr->slotId = HeapGetSlotId(slot);
+    }
     return GMERR_OK;
 }
 
 // TODO: heap 删除 和 更新接口
 Status HeapDelete();
+
 Status HeapUpdate();
+
+
+Status SEHeapInsertRow(uint32_t labelId, uint8_t *dataBuf, HeapAddrT *addr)
+{
+    // 获取运行上下文
+    SERunCtxT *runCtx = SEGetRunCtx();
+    uint32_t targetLabelId = labelId;
+    // 根据表ID获取容器
+    HeapContainerT *container = (HeapContainerT *) DbHashMapFind(runCtx->containerMap, &targetLabelId);
+    if (container == NULL) {
+        log_error("container is not exist, label id is %u.", targetLabelId);
+        return GMERR_STORAGE_CONTAINER_NOT_EXIST;
+    }
+    Status ret = HeapInsert(container, dataBuf, addr);
+    if (ret != GMERR_OK) {
+        return ret;
+    }
+    return GMERR_OK;
+}
