@@ -1,4 +1,4 @@
-#include "include/spr_common.h"
+#include "include/dm_common.h"
 
 SrDbCtrlManagerT *g_srDbCtrlManager = NULL;
 
@@ -42,25 +42,7 @@ SrDbCtrlManagerT *GetDbCtrlManager(void)
     return g_srDbCtrlManager;
 }
 
-bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName)
-{
-    DB_POINT2(dbCtrl, labelName);
-    for (uint32_t i = 0; i < DbVectorGetSize(&dbCtrl->labelCtrlList); i++)
-    {
-        SrLabelT *label = (SrLabelT *)DbVectorGetItem(&dbCtrl->labelCtrlList, i);
-        if (label == NULL)
-        {
-            // 理论上不会走到这里
-            log_error("get label failed when IsLabelNameExist.");
-            return false;
-        }
-        if (strcmp(label->labelName, labelName) == 0)
-        {
-            return true;
-        }
-    }
-    return false;
-}
+
 
 SrLabelT *DmGetLabelCtrlByLabelId(SrDbCtrlT *dbCtrl, uint32_t labelId)
 {

@@ -99,7 +99,9 @@ Status DbHashMapExtend(DbHashMapT *map)
         }
         // TODO: 重点排查这里有没有问题
         DbBucketT currBucket = oldBuckets[i];
-        uint32_t pos = GetNextFreeHashPos(map, currBucket.key);
+        bool isConflict = false;
+        uint32_t pos = GetNextFreeHashPos(map, currBucket.key, &isConflict);
+        DB_ASSERT(isConflict == false);
         map->buckets[pos] = currBucket;
     }
     return GMERR_OK;

@@ -10,7 +10,7 @@
 #include "../../common/include/common.h"
 #include "../../common/include/kv_memory.h"
 #include "../../common/include/db_memctx.h"
-#include "../../datamodel/simple_relation/include/spr_common.h"
+#include "../../datamodel/simple_relation/include/dm_common.h"
 
 #ifdef __cplusplus
 extern "C"

@@ -1,10 +1,9 @@
 #ifndef EE_OUT_FUNCTION_H
 #define EE_OUT_FUNCTION_H
 
-#include "ee_common.h"
-#include "out_type_defs.h"
+#include "se_out_function.h"
+// #include "out_type_defs.h"
 #include "interface_common.h"
-#include "spr_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,7 +16,7 @@ Status EEProcessRuntimeOpCode(QryStmtT *stmt);
  * @param label
  * @return
  */
-Status EECreateLabelContainer(SrLabelT *label);
+Status EECreateLabelContainer(SeLabelInfoT *labelInfo);
 
 #ifdef __cplusplus
 }

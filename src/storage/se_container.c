@@ -1,17 +1,17 @@
 #include "se_common.h"
 
-void InitContainerWithLaebl(HeapContainerT *container, SrLabelT *label)
+void InitContainerWithLaebl(HeapContainerT *container, SeLabelInfoT *labelInfo)
 {
     container->pageList = NULL;
     container->pageCnt = 0;
     container->useSlotList = NULL;
     container->recordCnt = 0;
-    container->labelInfo.dbId = label->dbId;
-    container->labelInfo.labelId = label->labelId;
-    container->labelInfo.recordLen = label->recordLen;
+    container->labelInfo.dbId = labelInfo->dbId;
+    container->labelInfo.labelId = labelInfo->labelId;
+    container->labelInfo.recordLen = labelInfo->recordLen;
 }
 
-Status HeapContainerCreate(SrLabelT *label)
+Status HeapContainerCreate(SeLabelInfoT *labelInfo)
 {
     // 获取运行上下文
     SERunCtxT *runCtx = SEGetRunCtx();
@@ -22,7 +22,7 @@ Status HeapContainerCreate(SrLabelT *label)
         log_error("Alloc container failed. Alloc size id %u.", sizeof(HeapContainerT));
         return GMERR_MEMORY_ALLOC_FAILED;
     }
-    InitContainerWithLaebl(container, label);
+    InitContainerWithLaebl(container, labelInfo);
 
     uint32_t * pageId = (uint32_t * )
     DbDynMemCtxAlloc(runCtx->memCtx, sizeof(uint32_t));
@@ -30,7 +30,7 @@ Status HeapContainerCreate(SrLabelT *label)
         log_error("Alloc container failed. Alloc size id %u.", sizeof(uint32_t));
         return GMERR_MEMORY_ALLOC_FAILED;
     }
-    *pageId = label->labelId;
+    *pageId = labelInfo->labelId;
 
     // 插入 container map
     return DbHashMapInsert(runCtx->containerMap, pageId, container);

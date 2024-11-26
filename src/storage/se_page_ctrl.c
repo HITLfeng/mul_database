@@ -38,10 +38,10 @@
 //     uint32_t rowCurr; // 当前记录位置
 // } PageCtrlT;
 
-typedef struct HeapAddr {
-    uint32_t pageId;
-    uint32_t slotId;
-} HeapAddrT;
+// typedef struct HeapAddr {
+//     uint32_t pageId;
+//     uint32_t slotId;
+// } HeapAddrT;
 
 /**
  * README.md

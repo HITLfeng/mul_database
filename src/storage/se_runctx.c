@@ -13,7 +13,7 @@ SERunCtxT *SEGetRunCtx() {
 Status SEInitRunCtxInner(SERunCtxT *seRunCtx, DbMemCtxT *memCtx) {
 //    seRunCtx->containerMap;
     DbHashMapT *map = NULL;
-    Status ret = DbHashMapCreate(&map, DbHashUInt32, DbCmpUInt32, memCtx)
+    Status ret = DbHashMapCreate(&map, DbHashUInt32, DbCmpUInt32, memCtx);
     if (ret != GMERR_OK) {
         return ret;
     }

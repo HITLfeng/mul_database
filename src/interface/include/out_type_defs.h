@@ -35,8 +35,8 @@ typedef enum OperatorCode {
 
     // SE 重构后的 opCode
     // *******************
-    OP_CREATE_TABLE,
-    OP_INSERT_DATA
+    // OP_CREATE_TABLE,
+    // OP_INSERT_DATA,
     // *******************
 
     OP_SIMREL_BUTT,

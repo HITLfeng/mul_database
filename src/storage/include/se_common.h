@@ -7,7 +7,6 @@
 #include "common.h"
 #include "kv_map.h"
 #include "se_out_function.h"
-#include "spr_common.h"
 
 #ifdef __cplusplus
 extern "C"
