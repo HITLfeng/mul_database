@@ -32,6 +32,13 @@ typedef enum OperatorCode {
     OP_SIMREL_QUERY_DATA,
     OP_SIMREL_DFX_DB_DESC,
     OP_SIMREL_QUERY_TABLE, // 内部调用
+
+    // SE 重构后的 opCode
+    // *******************
+    OP_CREATE_TABLE,
+    OP_INSERT_DATA
+    // *******************
+
     OP_SIMREL_BUTT,
 
     // sysview
