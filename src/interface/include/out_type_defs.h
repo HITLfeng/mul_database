@@ -38,6 +38,7 @@ typedef enum OperatorCode {
     // OP_CREATE_TABLE,
     // OP_INSERT_DATA,
     // *******************
+    OP_SIMREL_QUERY,
 
     OP_SIMREL_BUTT,
 
@@ -95,7 +96,7 @@ typedef enum {
 
 typedef enum FiledType {
     SR_LABEL_FILED_TYPE_INT32 = 0,
-    SR_LABEL_FILED_TYPE_UINT32 = 0,
+    SR_LABEL_FILED_TYPE_UINT32 = 1,
     // SR_LABEL_FILED_TYPE_FLOAT,
     SR_LABEL_FILED_TYPE_STRING,
     SR_LABEL_FILED_TYPE_BUTT,
@@ -147,6 +148,25 @@ typedef struct CliStmt {
     DbConnectT *conn;
     CliTableSchemaT *tableSchema; // 缓存某次操作的schema信息 后续考虑优化为共享内存方案，可以减少通信开销
 } CliStmtT; // 一个stmt只能操作一个DB内的一张表
+
+
+typedef enum {
+    DB_TYPE_INT32 = 0,
+    DB_TYPE_UINT32,
+    DB_TYPE_STRING,
+    DB_TYPE_BUTT,
+} DbValueTypeT;
+
+#define DB_VALUE_MAX_LENGTH 256
+typedef struct DbValue
+{
+    DbValueTypeT type;
+    union {
+        int32_t int32;
+        uint32_t uint32;
+        char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
+    } value;
+} DbValueT;
 
 
 

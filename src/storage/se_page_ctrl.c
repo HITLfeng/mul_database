@@ -163,6 +163,7 @@ Status SeInitPageCtrl() {
     if (ret != GMERR_OK) {
         return ret;
     }
+    g_sePageCtrl = sePageCtrl;
     // 初始化完成
     return GMERR_OK;
 }

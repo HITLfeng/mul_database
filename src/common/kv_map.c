@@ -10,7 +10,7 @@ uint32_t DbHashUInt32(void *key)
 
 uint32_t DbCmpUInt32(const void *key1, const void *key2)
 {
-    DB_POINT2(key1, key2);
+    // DB_POINT2(key1, key2);
     if (*(const uint32_t *) key1 == *(const uint32_t *) key2) {
         return DB_HASH_CMP_EQUAL;
     }
@@ -165,6 +165,10 @@ Status DbHashMapDelete(DbHashMapT *map, void *key, bool isFreeMem)
     uint32_t findTime = 0;
     while (map->buckets[pos].state != BUCKET_FREE) {
         DbBucketT *currBucket = &map->buckets[pos];
+        if (currBucket->state == BUCKET_FREE || currBucket->state== BUCKET_DELETE) {
+            pos = (pos + 1) % map->mapCapacity;
+            continue;
+        }
         if (DbIsBucketMatch(map->hashCmpFunc, currBucket->key, key)) {
             if (isFreeMem) {
                 DbDynMemCtxFree(map->memCtx, currBucket->key);

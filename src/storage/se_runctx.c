@@ -17,6 +17,7 @@ Status SEInitRunCtxInner(SERunCtxT *seRunCtx, DbMemCtxT *memCtx) {
     if (ret != GMERR_OK) {
         return ret;
     }
+    seRunCtx->containerMap = map;
     seRunCtx->memCtx = memCtx;
     return GMERR_OK;
 }

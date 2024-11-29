@@ -218,6 +218,7 @@ Status DMSrCreateTable(QryStmtT *stmt) {
     labelCtrl.labelId = GenSrTableId();
     labelCtrl.dbId = execCtx->dbId;
     labelCtrl.labelName = labelName;
+    labelCtrl.recordLen = fldOffset;
 
     // 创建容器 TODO: 这些流程全部放到EE层 移出模型层
     SeLabelInfoT labelInfo = {0};

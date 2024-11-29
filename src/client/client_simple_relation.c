@@ -9,7 +9,6 @@
 
 #include "include/client_common.h"
 
-
 // ********************************************
 // *******  简单关系表 相关接口 对外提供    *******
 // ********************************************
@@ -174,7 +173,7 @@ static uint32_t GetRecordTotalLen(CliTableSchemaT *tableSchema) {
     return totalLen;
 }
 
-void SRCSeriRequsetBuf(uint8_t **bufCursor, CliStmtT *stmt) {
+void SRCSeriInsertRequsetBuf(uint8_t **bufCursor, CliStmtT *stmt) {
     // 序列化DBID LABELID 记录总长度
     SeriUint32M(bufCursor, stmt->dbId);
     SeriUint32M(bufCursor, stmt->labelId);
@@ -182,8 +181,7 @@ void SRCSeriRequsetBuf(uint8_t **bufCursor, CliStmtT *stmt) {
     SeriUint32M(bufCursor, recordTotalLen);
     CliTableSchemaT *tableSchema = stmt->tableSchema;
     for (uint32_t i = 0; i < tableSchema->propertyCnt; ++i) {
-        if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_INT32)
-        {
+        if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_INT32) {
             // SeriInt32M(bufCursor, tableSchema->properties[i].value);
             SeriFixedStringM(bufCursor, tableSchema->properties[i].value, tableSchema->properties[i].fldSize);
         } else if (tableSchema->properties[i].type == SR_LABEL_FILED_TYPE_UINT32) {
@@ -194,7 +192,7 @@ void SRCSeriRequsetBuf(uint8_t **bufCursor, CliStmtT *stmt) {
             // 为定长数据定制，不序列化长度
             SeriFixedStringM(bufCursor, tableSchema->properties[i].value, tableSchema->properties[i].fldSize);
         } else {
-            log_error("CLIENT: SRCSeriRequsetBuf:not support type. type = %d", tableSchema->properties[i].type);
+            log_error("CLIENT: SRCSeriInsertRequsetBuf:not support type. type = %d", tableSchema->properties[i].type);
             return;
         }
     }
@@ -237,7 +235,7 @@ CliStatus SRCInsertData(CliStmtT *stmt, ...) {
 
     // 序列化 msgBuf.requestMsg
     char *bufCursor = msgBuf.requestMsg;
-    SRCSeriRequsetBuf((uint8_t **)&bufCursor, stmt);
+    SRCSeriInsertRequsetBuf((uint8_t **)&bufCursor, stmt);
 
     // 客户端服务端错误码混合返回
     return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
@@ -257,3 +255,120 @@ Status SrcOutFunc(DbConnectT *conn, ...) {
     // 7. 返回结果
  }
  */
+
+#define SR_CURR_OPERATION_COUNT 3
+
+typedef enum {
+    OP_LARGE = 0,
+    OP_EQUAL,
+    OP_LESS,
+    OP_NULL, // 不设置比较条件，全表扫描
+    OP_BUTT
+} SRCondCmpT;
+
+// TODO: 请在DM层实现 DBVALUE
+typedef struct SRCond {
+    uint32_t fldIdx;    // 设置了比较条件的字段的下标
+    SRCondCmpT cmpType; // 比较类型
+    DbValueT dbValue;   // 比较值
+} SRCondT;
+
+
+#define SR_KEY_MAX_LENGTH 128 
+#define SR_KEY_VALUE_LENGTH 128 
+#define SR_KEY_VALUE_LENGTH 1024
+
+void SetDbValue(DbValueT *DbValue, FiledTypeT type, char *value) {
+    switch (type) {
+        case SR_LABEL_FILED_TYPE_INT32:
+            DbValue->type = SR_LABEL_FILED_TYPE_INT32;
+            DbValue->value.int32 = atoi(value);
+            break;
+        case SR_LABEL_FILED_TYPE_UINT32:
+            DbValue->type = SR_LABEL_FILED_TYPE_UINT32;
+            DbValue->value.uint32 = atoi(value);
+            break;
+        case SR_LABEL_FILED_TYPE_STRING:
+            DbValue->type = SR_LABEL_FILED_TYPE_STRING;
+            strcpy(DbValue->value.str, value);
+            break;
+        default:
+            DB_ASSERT(false);
+    }
+}
+
+void SplitWithoutSpace(const char *str, char *key, char *value, const char *op){
+    char *sign = strstr(str, op); // 查找分隔符位置
+    if (sign == NULL) {
+        DB_ASSERT(false);
+    }
+    // name >= abc123
+    //      sign
+    uint32_t leftLen = sign - str;
+    uint32_t strCursor = 0;
+    for (uint32_t i = 0; i < leftLen; ++i) {
+        if (str[i] != ' ') {
+            key[strCursor++] = str[i];
+        }
+    }
+    key[strCursor] = '\0';
+    strCursor = 0;
+    for (uint32_t i = leftLen + strlen(op); i < strlen(str); ++i) {
+        if (str[i] != ' ') {
+            value[strCursor++] = str[i];
+        }
+    }
+    value[strCursor] = '\0';
+}
+
+void SetCondition(CliTableSchemaT *tableSchema, SRCondT *cond, char *key, char *value, SRCondCmpT condCmp) {
+    // 根据 key 寻找对应的 property 下标
+    uint32_t propertyCnt = tableSchema->propertyCnt;
+    for (uint32_t i = 0; i < propertyCnt; ++i) {
+        if (strcmp(tableSchema->properties[i].fldName, key) == 0) {
+            cond->fldIdx = i;
+            cond->cmpType = condCmp;
+            SetDbValue(&cond->dbValue, tableSchema->properties[i].type, value);
+            return;
+        }
+    }
+    DB_ASSERT(false);
+    // 这里应该报错返回
+}
+
+void PrepareCondition(CliTableSchemaT *tableSchema, const char *condition, SRCondT *cond) {
+    if (condition == NULL || strcmp(condition, "") == 0) {
+        cond->cmpType = OP_NULL;
+    }
+    const char op[SR_CURR_OPERATION_COUNT] = {'>', '=', '<'};
+    for (uint32_t i = 0; i < SR_CURR_OPERATION_COUNT; ++i) {
+        char *sign = strstr(condition, op[i]);
+        if (sign != NULL) {
+            // cond->cmpType = i;
+            char key[SR_KEY_MAX_LENGTH] = {0};
+            char value[SR_KEY_VALUE_LENGTH] = {0};
+            SplitWithoutSpace(condition, key, value, op[i]);
+            SetCondition(tableSchema, cond, key, value, i);
+            return;
+        }
+    }
+    DB_ASSERT(false);
+}
+
+// 20241127
+// 目前只支持一个查询条件 > = <
+Status SRCQueryData(CliStmtT *stmt, const char *conditionStr) {
+    DB_POINT(stmt);
+    SRCondT cond = {0};
+    PrepareCondition(stmt->tableSchema, conditionStr, &cond);
+        // 初始化 requestHeader
+    MsgBufRequestT msgBuf = {0};
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_QUERY);
+
+    // 序列化 msgBuf.requestMsg
+    char *bufCursor = msgBuf.requestMsg;
+    SRCSeriQueryRequsetBuf((uint8_t **)&bufCursor, &cond);
+
+    // 客户端服务端错误码混合返回
+    return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
+}

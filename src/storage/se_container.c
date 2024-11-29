@@ -102,13 +102,13 @@ Status HeapInsert(HeapContainerT *container, void *dataBuf, HeapAddrT *addr)
     memcpy(HeapGetDataPos(slot), dataBuf, container->labelInfo.recordLen);
 
     // 4.slot 插入 container 中的记录链
-    if (container->pageCnt == 0) {
+    if (container->useSlotList == NULL) {
         // 设置为头节点
         HeapSetSlotNextAddr(slot, slot);
         HeapSetSlotPrevAddr(slot, slot);
         container->useSlotList = slot;
     } else {
-        DB_ASSERT(container->useSlotList != NULL);
+        // DB_ASSERT(container->useSlotList != NULL);
         // HEAD0 == HEAD1    newHEAD
         void *headSlot = container->useSlotList;
         // 获取尾节点
