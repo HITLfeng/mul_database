@@ -30,8 +30,8 @@ typedef struct SePageInfo {
 
 // TODO: 不会存在空页，空页理论上会被马上回收
 typedef struct SePage {
-    void *nextPage;
-    void *pageAddr;
+    void *nextPage; // 下页的地址
+    void *pageAddr; // 当前页的地址
     uint32_t pageId; // 页 ID
 
     SePageInfoT pageInfo; // 被使用后 初始化该值
@@ -54,10 +54,7 @@ typedef struct HeapContainer {
 
 //void *SeGetPageCtrlMng(void);
 
-typedef struct LabelCursor {
-    uint32_t labelId;
-    HeapContainerT *container;
-} LabelCursorT;
+
 
 
 
@@ -84,7 +81,27 @@ void HeapSetSlotId(void *slot, uint32_t slotId);
 void *HeapGetSlotNextAddr(void *slot);
 void *HeapGetSlotPrevAddr(void *slot);
 void *HeapGetDataPos(void *slot);
+
 uint32_t HeapGetSlotId(void *slot);
+uint32_t HeapGetPageId(void *slot);
+
+void HeapSetSlotId(void *slot, uint32_t slotId);
+void HeapSetPageId(void *slot, uint32_t pageId);
+
+ /**
+  * 返回当前 slot 并将 addr 置于下一个记录处
+  * @param addr   pageId + slotId
+  * @param slot   【OUT】获取当前slot
+  * @return  当前的 record buf 值
+  */
+Status HeapGetNextSlot(HeapAddrT *addr, void **slot);
+
+/**
+ * 根据addr返回实际slot地址,只有SE内部可用
+ * @param addr
+ * @return
+ */
+void *GetSlotByAddr(HeapAddrT *addr);
 
 #ifdef __cplusplus
 }

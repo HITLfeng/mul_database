@@ -1,6 +1,4 @@
-#include "se_out_function.h"
-#include "kv_memory.h"
-
+#include "se_common.h"
 
 
 //typedef struct SeRunCtx {} SeRunCtxT;
@@ -28,3 +26,57 @@
 //     heap->currPos += heap->rowSize;
 //     heap->rowCnt++;
 // }
+
+HeapContainerT *GetHeapContainerByLabelId(uint32_t labelId) {
+    SERunCtxT *runCtx = SEGetRunCtx();
+    uint32_t targetLabelId = labelId;
+    // 根据表ID获取容器
+    HeapContainerT *container = (HeapContainerT *) DbHashMapFind(runCtx->containerMap, &targetLabelId);
+    if (container == NULL) {
+        return NULL;
+    }
+    return container;
+}
+
+Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor)
+{
+    DB_POINT(labelCursor);
+    if (labelCursor->labelId != 0) {
+        log_error("error when init labelCursor. label id is %u and not equal to 0.", labelCursor->labelId);
+        return GMERR_STORAGE_LABELCURSOR_USED;
+    }
+    HeapContainerT *container = GetHeapContainerByLabelId(labelId);
+    if (container == NULL) {
+        log_error("container is not exist, label id is %u.", targetLabelId);
+        return GMERR_STORAGE_CONTAINER_NOT_EXIST;
+    }
+    labelCursor->labelId = labelId;
+    labelCursor->container = container;
+    return GMERR_OK;
+}
+
+
+
+Status HeapGetNextSlot(HeapAddrT *addr, void **slot)
+{
+    void *currSlot = GetSlotByAddr(addr);
+    if (currSlot == NULL) {
+        log_error("GetSlotByAddr failed and pageId: %u slotId: %u.", addr->pageId, addr->slotId);
+        return GMERR_STORAGE_INVAILD_HEAP_ADDR;
+    }
+    // 获取下一个地址
+    void *nextSlot = HeapGetSlotNextAddr(currSlot);
+    // TODO: 现在好像是双向链表 要么改成单向 页面设置可区分的头节点
+    if (nextSlot == NULL) {
+        return GMERR_NO_DATA;
+    }
+
+    *slot = currSlot;
+    addr->pageId = HeapGetPageId(nextSlot);
+    addr->pageId = HeapGetSlotId(nextSlot);
+    return GMERR_OK;
+}
+
+Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor) {
+
+}

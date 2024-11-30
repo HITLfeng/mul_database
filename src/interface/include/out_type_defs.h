@@ -108,6 +108,8 @@ typedef struct SrDbCreateLabelCtx {
     FiledTypeT fieldType[SR_LABEL_MAX_FILED_CNT]; // 属性类型数组
 } SrDbCreateLabelCtxT;
 
+
+typedef SRCond SRCondT;
 // simple rel 相关传递机构体
 typedef struct SimpleRelExecCtx {
     uint32_t dbId;
@@ -117,6 +119,7 @@ typedef struct SimpleRelExecCtx {
     char labelJson[SR_LABEL_JSON_MAX_LENGTH];
     void *insertData; // 待插入数据
     uint32_t totalFldSize; // 字段总长度
+    SRCondT cond;
 } SimpleRelExecCtxT;
 
 typedef struct SysviewEditCtx {
@@ -168,7 +171,22 @@ typedef struct DbValue
     } value;
 } DbValueT;
 
+typedef enum {
+    OP_LARGE = 0,
+    OP_EQUAL,
+    OP_LESS,
+    OP_NULL, // 不设置比较条件，全表扫描
+    OP_BUTT
+} SRCondCmpT;
 
+// TODO: 请在DM层实现 DBVALUE
+struct SRCond {
+    uint32_t dbId;
+    uint32_t labelId;
+    uint32_t fldIdx;    // 设置了比较条件的字段的下标
+    SRCondCmpT cmpType; // 比较类型
+    DbValueT dbValue;   // 比较值
+};
 
 
 // ************************************

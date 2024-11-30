@@ -49,12 +49,17 @@ typedef uint32_t Status;
 #define GMERR_MEMORY_ALLOC_FAILED 1000002
 #define GMERR_KV_MEMORY_ALLOC_FAILED 1000003
 
+// 无数据
+#define GMERR_NO_DATA 1000004
+// 数据异常
+#define GMERR_DATA_EXEPTION 1000005
+
 
 
 
 
 // 第三方库出错
-#define GMERR_JSON_LIB_ERROR 1000004
+#define GMERR_JSON_LIB_ERROR 1000099
 
 // 工具类 map 出错
 #define GMERR_MAP_KEY_NOT_EXIST 1000200
@@ -107,6 +112,11 @@ typedef uint32_t Status;
 #define GMERR_STORAGE_PAGE_CTRL_INIT_FAILED 3001003
 // label id 对应的 container 不存在
 #define GMERR_STORAGE_CONTAINER_NOT_EXIST 3001004
+
+// labelCursor 传入的 labelCursor 已被使用
+#define GMERR_STORAGE_LABELCURSOR_USED 3001005
+// 无效的 HEAP ADDR
+#define GMERR_STORAGE_INVAILD_HEAP_ADDR 3001006
 
 // ****************************************
 // DATAMODEL 模块错误码

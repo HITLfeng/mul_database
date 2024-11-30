@@ -2,7 +2,7 @@
 #define EE_OUT_FUNCTION_H
 
 #include "se_out_function.h"
-// #include "out_type_defs.h"
+ #include "out_type_defs.h"
 #include "interface_common.h"
 
 #ifdef __cplusplus

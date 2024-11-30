@@ -50,6 +50,12 @@ typedef struct SeLabelInfo {
     uint32_t recordLen; // 记录长度
 } SeLabelInfoT;
 
+typedef struct LabelCursor {
+    uint32_t labelId;
+    HeapContainerT *container;
+    HeapAddrT heapAddr; // 当前查询到的地址
+} LabelCursorT;
+
 SERunCtxT *SEGetRunCtx();
 
 /**
@@ -69,9 +75,21 @@ Status HeapContainerCreate(SeLabelInfoT *labelInfo);
  * @param labelId 【IN】要插入的表的ID
  * @param dataBuf 【IN】要插入的用户数据
  * @param addr    【OUT】出参，返回记录的地址 传入 [NULL] 则不做处理！
- * @return
+ * @return Status DB 错误码
  */
 Status SEHeapInsertRow(uint32_t labelId, uint8_t *dataBuf, HeapAddrT *addr);
+
+/**
+ * SE 层对外提供的接口,开启 SE 层入口。
+ * 注意：调用此接口，需要lebelCursor中的labelId == 0 否则报错
+ * @param labelId       【IN】 入参。要开启的labelId
+ * @param labelCursor   【OUT】出参。返回初始化好的labelCursor
+ * @return
+ */
+Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor);
+
+
+Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor);
 
 #ifdef __cplusplus
 }

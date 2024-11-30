@@ -13,6 +13,12 @@
 // *******  简单关系表 相关接口 对外提供    *******
 // ********************************************
 
+void SRCSeriRequsetBuf(uint8_t **bufCursor, const uint8_t *buf, uint32_t bufLen) {
+    memcpy(*bufCursor, buf, bufLen);
+    *bufCursor += bufLen;
+}
+
+
 // 序列化单段字符串用此接口
 void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf) {
     DB_POINT2(usrMsgBuf, buf);
@@ -258,20 +264,7 @@ Status SrcOutFunc(DbConnectT *conn, ...) {
 
 #define SR_CURR_OPERATION_COUNT 3
 
-typedef enum {
-    OP_LARGE = 0,
-    OP_EQUAL,
-    OP_LESS,
-    OP_NULL, // 不设置比较条件，全表扫描
-    OP_BUTT
-} SRCondCmpT;
 
-// TODO: 请在DM层实现 DBVALUE
-typedef struct SRCond {
-    uint32_t fldIdx;    // 设置了比较条件的字段的下标
-    SRCondCmpT cmpType; // 比较类型
-    DbValueT dbValue;   // 比较值
-} SRCondT;
 
 
 #define SR_KEY_MAX_LENGTH 128 
@@ -321,7 +314,8 @@ void SplitWithoutSpace(const char *str, char *key, char *value, const char *op){
     value[strCursor] = '\0';
 }
 
-void SetCondition(CliTableSchemaT *tableSchema, SRCondT *cond, char *key, char *value, SRCondCmpT condCmp) {
+void SetCondition(CliStmtT *stmt, SRCondT *cond, char *key, char *value, SRCondCmpT condCmp) {
+    CliTableSchemaT *tableSchema = stmt->tableSchema;
     // 根据 key 寻找对应的 property 下标
     uint32_t propertyCnt = tableSchema->propertyCnt;
     for (uint32_t i = 0; i < propertyCnt; ++i) {
@@ -329,6 +323,8 @@ void SetCondition(CliTableSchemaT *tableSchema, SRCondT *cond, char *key, char *
             cond->fldIdx = i;
             cond->cmpType = condCmp;
             SetDbValue(&cond->dbValue, tableSchema->properties[i].type, value);
+            cond->dbId = stmt->dbId;
+            cond->labelId = stmt->labelId;
             return;
         }
     }
@@ -336,7 +332,7 @@ void SetCondition(CliTableSchemaT *tableSchema, SRCondT *cond, char *key, char *
     // 这里应该报错返回
 }
 
-void PrepareCondition(CliTableSchemaT *tableSchema, const char *condition, SRCondT *cond) {
+void PrepareCondition(CliStmtT *stmt, const char *condition, SRCondT *cond) {
     if (condition == NULL || strcmp(condition, "") == 0) {
         cond->cmpType = OP_NULL;
     }
@@ -348,26 +344,28 @@ void PrepareCondition(CliTableSchemaT *tableSchema, const char *condition, SRCon
             char key[SR_KEY_MAX_LENGTH] = {0};
             char value[SR_KEY_VALUE_LENGTH] = {0};
             SplitWithoutSpace(condition, key, value, op[i]);
-            SetCondition(tableSchema, cond, key, value, i);
+            SetCondition(stmt, cond, key, value, i);
             return;
         }
     }
     DB_ASSERT(false);
 }
 
+
+
 // 20241127
 // 目前只支持一个查询条件 > = <
 Status SRCQueryData(CliStmtT *stmt, const char *conditionStr) {
     DB_POINT(stmt);
     SRCondT cond = {0};
-    PrepareCondition(stmt->tableSchema, conditionStr, &cond);
+    PrepareCondition(stmt, conditionStr, &cond);
         // 初始化 requestHeader
     MsgBufRequestT msgBuf = {0};
     SRCInitMsgBuf(&msgBuf, OP_SIMREL_QUERY);
 
     // 序列化 msgBuf.requestMsg
     char *bufCursor = msgBuf.requestMsg;
-    SRCSeriQueryRequsetBuf((uint8_t **)&bufCursor, &cond);
+    SRCSeriRequsetBuf((uint8_t **)&bufCursor, &cond, sizeof(cond));
 
     // 客户端服务端错误码混合返回
     return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);

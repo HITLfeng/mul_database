@@ -118,10 +118,13 @@ Status HeapInsert(HeapContainerT *container, void *dataBuf, HeapAddrT *addr)
         HeapSetSlotNextAddr(slot, headSlot);
         HeapSetSlotPrevAddr(headSlot, slot);
     }
-    // 5.更新 container 相关结构体内容
+    // 5.更新 pageId + slotId
+    HeapSetPageId(slot, page->pageId);
+    HeapSetSlotId(slot, HeapGetSlotId(slot));
+    // 6.更新 container 相关结构体内容
     container->recordCnt++;
 
-    // 6.赋值 ADDR
+    // 7.赋值 ADDR
     if (addr != NULL) {
         addr->pageId = page->pageId;
         addr->slotId = HeapGetSlotId(slot);
