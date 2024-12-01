@@ -2,6 +2,7 @@
 #define __DM_OUT_FUNCTION_H__
 
 #include "vector_util.h"
+#include "out_type_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

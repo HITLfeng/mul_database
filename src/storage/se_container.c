@@ -123,7 +123,7 @@ Status HeapInsert(HeapContainerT *container, void *dataBuf, HeapAddrT *addr)
     HeapSetSlotId(slot, HeapGetSlotId(slot));
     // 6.更新 container 相关结构体内容
     container->recordCnt++;
-
+    container->lastRecordSlot = slot;
     // 7.赋值 ADDR
     if (addr != NULL) {
         addr->pageId = page->pageId;

@@ -50,6 +50,7 @@ typedef struct HeapContainer {
     void *useSlotList; // 记录链表
     uint32_t recordCnt; // 记录数
     HeapLabelInfoT labelInfo; // 打开该容器的表的信息
+    void *lastRecordSlot; // 最后一条记录的 SLOT 地址
 } HeapContainerT;
 
 //void *SeGetPageCtrlMng(void);
@@ -90,11 +91,13 @@ void HeapSetPageId(void *slot, uint32_t pageId);
 
  /**
   * 返回当前 slot 并将 addr 置于下一个记录处
-  * @param addr   pageId + slotId
+  * @param addr   【IN】pageId + slotId
+  * @param endSlot   【IN】当前container的最后一条记录
   * @param slot   【OUT】获取当前slot
+  * @param isFetchEnd   【OUT】是否停止获取
   * @return  当前的 record buf 值
   */
-Status HeapGetNextSlot(HeapAddrT *addr, void **slot);
+ Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetchEnd);
 
 /**
  * 根据addr返回实际slot地址,只有SE内部可用

@@ -56,6 +56,27 @@ typedef struct LabelCursor {
     HeapAddrT heapAddr; // 当前查询到的地址
 } LabelCursorT;
 
+// SE 吐出去的 buf
+typedef struct HeapBuf {
+    void *buf;
+    uint32_t bufSize;
+} HeapBufT;
+
+/**
+ * heapBuf 存储层会copy一份内存记录出来,不需要用户传入
+ *
+ */
+typedef bool(*UsrDealHeapBuf)(const HeapBufT *heapBuf, void *usrData);
+
+// SEHeapFetchNextWithCond 捞取数据所用
+typedef struct FetchArgs {
+    DbMemCtxT *memCtx; // memCtx 外部传入 用于申请该结构体内的内存
+    UsrDealHeapBuf dealBuf;
+    uint32_t fetchCnt; // 从 heap 中捞取到 record 的总数
+    HeapBufT *heapBuf; // 从 heap 中捞取的 heapBuf 链表 内存从memctx中申请 SEHeapFetchNextWithCond 每次返回一条
+    void *usrData; // 用户自定义数据 与dealBuf配合使用 用于判断捞出的slot是否符合条件
+} FetchArgsT;
+
 SERunCtxT *SEGetRunCtx();
 
 /**
@@ -88,8 +109,21 @@ Status SEHeapInsertRow(uint32_t labelId, uint8_t *dataBuf, HeapAddrT *addr);
  */
 Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor);
 
+/**
+ * 调用此接口，每次获取一个 buf 数据
+ * @param labelCursor
+ * @param fetchArgs
+ * @return
+ */
+Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs);
 
-Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor);
+/**
+ * 调用此接口，捞取全部满足条件的 buf 数据
+ * @param labelCursor
+ * @param fetchArgs
+ * @return
+ */
+Status SEHeapFetchAllWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs);
 
 #ifdef __cplusplus
 }
