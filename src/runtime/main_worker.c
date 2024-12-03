@@ -7,7 +7,7 @@
 #if MEMCTX_TEST_ON
 // *******************
 // debug memCtx
-void TestBasicAlloc(){
+void TestBasicAlloc() {
     void *ptr1 = DbDynMemCtxAlloc(NULL, 14);
     void *ptr2 = DbDynMemCtxAlloc(NULL, 14);
     for (uint32_t i = 1; i < 1024; i++) {
@@ -71,6 +71,13 @@ Status MainWorkerStart() {
         log_error("MainWorkerStart, get socket error");
         return GMERR_SOCKET_FAILED;
     }
+    // 设置端口复用选项
+    int optval = 1;
+    if (setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval)) == -1) {
+        log_error("MainWorkerStart, get socket opt error");
+        close(serv_sock);
+        return GMERR_SOCKET_FAILED;
+    }
 
     // 绑定IP地址和端口
     memset(&serv_addr, 0, sizeof(serv_addr));
@@ -94,7 +101,6 @@ Status MainWorkerStart() {
         log_error("MainWorkerStart, KVMemoryPoolInit failed");
         return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
     }
-
 
     // 初始化 memctx 后续替代内存池
     if (DbInitMemManager() != GMERR_OK) {

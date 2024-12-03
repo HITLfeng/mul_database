@@ -18,6 +18,11 @@ extern "C" {
  */
 void InitLabelInfo(SrLabelT *label, SeLabelInfoT *labelInfo);
 
+/**
+ * 查询数据
+ */
+Status EEQueryData(QryStmtT *stmt);
+
 #ifdef __cplusplus
 }
 #endif

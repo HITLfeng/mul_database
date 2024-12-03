@@ -109,7 +109,40 @@ typedef struct SrDbCreateLabelCtx {
 } SrDbCreateLabelCtxT;
 
 
-typedef SRCond SRCondT;
+typedef enum {
+    DB_TYPE_INT32 = 0,
+    DB_TYPE_UINT32,
+    DB_TYPE_STRING,
+    DB_TYPE_BUTT,
+} DbValueTypeT;
+
+#define DB_VALUE_MAX_LENGTH 256
+typedef struct DbValue
+{
+    DbValueTypeT type;
+    union {
+        int32_t int32;
+        uint32_t uint32;
+        char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
+    } value;
+} DbValueT;
+
+typedef enum {
+    OP_CMP_LARGE = 0,
+    OP_CMP_EQUAL,
+    OP_CMP_LESS,
+    OP_CMP_NULL, // 不设置比较条件，全表扫描
+    OP_CMP_BUTT
+} SRCondCmpT;
+
+// TODO: 请在DM层实现 DBVALUE
+typedef struct SRCond {
+    uint32_t dbId;
+    uint32_t labelId;
+    uint32_t fldIdx;    // 设置了比较条件的字段的下标
+    SRCondCmpT cmpType; // 比较类型
+    DbValueT dbValue;   // 比较值
+} SRCondT;
 // simple rel 相关传递机构体
 typedef struct SimpleRelExecCtx {
     uint32_t dbId;
@@ -153,40 +186,7 @@ typedef struct CliStmt {
 } CliStmtT; // 一个stmt只能操作一个DB内的一张表
 
 
-typedef enum {
-    DB_TYPE_INT32 = 0,
-    DB_TYPE_UINT32,
-    DB_TYPE_STRING,
-    DB_TYPE_BUTT,
-} DbValueTypeT;
 
-#define DB_VALUE_MAX_LENGTH 256
-typedef struct DbValue
-{
-    DbValueTypeT type;
-    union {
-        int32_t int32;
-        uint32_t uint32;
-        char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
-    } value;
-} DbValueT;
-
-typedef enum {
-    OP_LARGE = 0,
-    OP_EQUAL,
-    OP_LESS,
-    OP_NULL, // 不设置比较条件，全表扫描
-    OP_BUTT
-} SRCondCmpT;
-
-// TODO: 请在DM层实现 DBVALUE
-struct SRCond {
-    uint32_t dbId;
-    uint32_t labelId;
-    uint32_t fldIdx;    // 设置了比较条件的字段的下标
-    SRCondCmpT cmpType; // 比较类型
-    DbValueT dbValue;   // 比较值
-};
 
 
 // ************************************

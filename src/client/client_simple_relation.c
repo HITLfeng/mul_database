@@ -18,7 +18,6 @@ void SRCSeriRequsetBuf(uint8_t **bufCursor, const uint8_t *buf, uint32_t bufLen)
     *bufCursor += bufLen;
 }
 
-
 // 序列化单段字符串用此接口
 void SetSRSetDbUsrMsgBuf(char *usrMsgBuf, const char *buf) {
     DB_POINT2(usrMsgBuf, buf);
@@ -264,33 +263,40 @@ Status SrcOutFunc(DbConnectT *conn, ...) {
 
 #define SR_CURR_OPERATION_COUNT 3
 
-
-
-
-#define SR_KEY_MAX_LENGTH 128 
-#define SR_KEY_VALUE_LENGTH 128 
+#define SR_KEY_MAX_LENGTH 128
 #define SR_KEY_VALUE_LENGTH 1024
 
+/**
+ * @brief Sets the value of a DbValue structure based on the provided type and value.
+ *
+ * This function takes a pointer to a DbValue structure, a FieldTypeT indicating the type of the value,
+ * and a char pointer to the value itself. It then assigns the appropriate value to the DbValue structure
+ * based on the type. If an unsupported type is provided, it asserts false.
+ *
+ * @param DbValue Pointer to the DbValue structure to be modified.
+ * @param type FieldTypeT indicating the type of the value.
+ * @param value Char pointer to the value to be set.
+ */
 void SetDbValue(DbValueT *DbValue, FiledTypeT type, char *value) {
     switch (type) {
-        case SR_LABEL_FILED_TYPE_INT32:
-            DbValue->type = SR_LABEL_FILED_TYPE_INT32;
-            DbValue->value.int32 = atoi(value);
-            break;
-        case SR_LABEL_FILED_TYPE_UINT32:
-            DbValue->type = SR_LABEL_FILED_TYPE_UINT32;
-            DbValue->value.uint32 = atoi(value);
-            break;
-        case SR_LABEL_FILED_TYPE_STRING:
-            DbValue->type = SR_LABEL_FILED_TYPE_STRING;
-            strcpy(DbValue->value.str, value);
-            break;
-        default:
-            DB_ASSERT(false);
+    case SR_LABEL_FILED_TYPE_INT32:
+        DbValue->type = SR_LABEL_FILED_TYPE_INT32;
+        DbValue->value.int32 = atoi(value);
+        break;
+    case SR_LABEL_FILED_TYPE_UINT32:
+        DbValue->type = SR_LABEL_FILED_TYPE_UINT32;
+        DbValue->value.uint32 = atoi(value);
+        break;
+    case SR_LABEL_FILED_TYPE_STRING:
+        DbValue->type = SR_LABEL_FILED_TYPE_STRING;
+        strcpy(DbValue->value.str, value);
+        break;
+    default:
+        DB_ASSERT(false);
     }
 }
 
-void SplitWithoutSpace(const char *str, char *key, char *value, const char *op){
+void SplitWithoutSpace(const char *str, char *key, char *value, const char *op) {
     char *sign = strstr(str, op); // 查找分隔符位置
     if (sign == NULL) {
         DB_ASSERT(false);
@@ -334,9 +340,12 @@ void SetCondition(CliStmtT *stmt, SRCondT *cond, char *key, char *value, SRCondC
 
 void PrepareCondition(CliStmtT *stmt, const char *condition, SRCondT *cond) {
     if (condition == NULL || strcmp(condition, "") == 0) {
-        cond->cmpType = OP_NULL;
+        cond->cmpType = OP_CMP_NULL;
+        cond->dbId = stmt->dbId;
+        cond->labelId = stmt->labelId;
+        return;
     }
-    const char op[SR_CURR_OPERATION_COUNT] = {'>', '=', '<'};
+    const char *op[SR_CURR_OPERATION_COUNT] = {">", "=", "<"};
     for (uint32_t i = 0; i < SR_CURR_OPERATION_COUNT; ++i) {
         char *sign = strstr(condition, op[i]);
         if (sign != NULL) {
@@ -351,21 +360,19 @@ void PrepareCondition(CliStmtT *stmt, const char *condition, SRCondT *cond) {
     DB_ASSERT(false);
 }
 
-
-
 // 20241127
 // 目前只支持一个查询条件 > = <
-Status SRCQueryData(CliStmtT *stmt, const char *conditionStr) {
+CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr) {
     DB_POINT(stmt);
     SRCondT cond = {0};
     PrepareCondition(stmt, conditionStr, &cond);
-        // 初始化 requestHeader
+    // 初始化 requestHeader
     MsgBufRequestT msgBuf = {0};
     SRCInitMsgBuf(&msgBuf, OP_SIMREL_QUERY);
 
     // 序列化 msgBuf.requestMsg
     char *bufCursor = msgBuf.requestMsg;
-    SRCSeriRequsetBuf((uint8_t **)&bufCursor, &cond, sizeof(cond));
+    SRCSeriRequsetBuf((uint8_t **)&bufCursor, (void *)&cond, sizeof(cond));
 
     // 客户端服务端错误码混合返回
     return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);

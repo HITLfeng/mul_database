@@ -52,8 +52,9 @@ typedef struct SeLabelInfo {
 
 typedef struct LabelCursor {
     uint32_t labelId;
-    HeapContainerT *container;
+    void *container; // TODO: 后续改为使用seInatance 避免暴露给外部模块
     HeapAddrT heapAddr; // 当前查询到的地址
+    bool isFetchEnd; // 标志当前 cursor 是否已经查询完所有数据
 } LabelCursorT;
 
 // SE 吐出去的 buf

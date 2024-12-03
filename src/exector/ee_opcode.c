@@ -1,4 +1,4 @@
-#include "ee_out_function.h"
+#include "ee_common.h"
 #include "dm_common.h"
 
 static bool EEIsSimpleRelOpCode(OperatorCode opCode)

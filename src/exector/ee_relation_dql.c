@@ -58,6 +58,6 @@ Status EEQueryData(QryStmtT *stmt)
         if (fetchArgs.heapBuf != NULL) {
             DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
         }
-    } while (ret != GMERR_NO_DATA);
-
+    } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
+    return ret; 
 }

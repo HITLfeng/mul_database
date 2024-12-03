@@ -1,7 +1,6 @@
 #include "se_common.h"
 
-
-//typedef struct SeRunCtx {} SeRunCtxT;
+// typedef struct SeRunCtx {} SeRunCtxT;
 
 // void SEFixedHeapInit(FixedHeapT *heap, uint32_t rowSize) {
 //     memset(heap, 0x00, sizeof(FixedHeapT));
@@ -27,22 +26,21 @@
 //     heap->rowCnt++;
 // }
 
-#define INVAILD_HEAPADDR ((HeapAddrT){0, 0});
+#define HEAP_INVAILD_ID 0xffffffef
+#define INVAILD_HEAPADDR ((HeapAddrT){HEAP_INVAILD_ID, HEAP_INVAILD_ID})
 
-HeapContainerT *GetHeapContainerByLabelId(uint32_t labelId)
-{
+HeapContainerT *GetHeapContainerByLabelId(uint32_t labelId) {
     SERunCtxT *runCtx = SEGetRunCtx();
     uint32_t targetLabelId = labelId;
     // 根据表ID获取容器
-    HeapContainerT *container = (HeapContainerT *) DbHashMapFind(runCtx->containerMap, &targetLabelId);
+    HeapContainerT *container = (HeapContainerT *)DbHashMapFind(runCtx->containerMap, &targetLabelId);
     if (container == NULL) {
         return NULL;
     }
     return container;
 }
 
-Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor)
-{
+Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor) {
     DB_POINT(labelCursor);
     if (labelCursor->labelId != 0) {
         log_error("error when init labelCursor. label id is %u and not equal to 0.", labelCursor->labelId);
@@ -50,27 +48,23 @@ Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor)
     }
     HeapContainerT *container = GetHeapContainerByLabelId(labelId);
     if (container == NULL) {
-        log_error("container is not exist, label id is %u.", targetLabelId);
+        log_error("container is not exist, label id is %u.", labelId);
         return GMERR_STORAGE_CONTAINER_NOT_EXIST;
     }
     labelCursor->labelId = labelId;
     labelCursor->container = container;
+    labelCursor->heapAddr = INVAILD_HEAPADDR;
+    labelCursor->isFetchEnd = false;
     return GMERR_OK;
 }
 
-inline static bool
-IsHeapAddrInvaild(HeapAddrT
-*addr)
-{
-return *addr == INVAILD_HEAPADDR;
-}
+inline static bool IsHeapAddrInvaild(HeapAddrT *addr) { return addr->pageId == HEAP_INVAILD_ID && addr->slotId == HEAP_INVAILD_ID; }
 
-Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetchEnd)
-{
+Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetchEnd) {
     if (*isFetchEnd == true) {
         return GMERR_NO_DATA;
     }
-    if (!IsHeapAddrInvaild(addr)) {
+    if (IsHeapAddrInvaild(addr)) {
         log_warn("heap addr is empty.");
         *isFetchEnd = true;
         return GMERR_NO_DATA;
@@ -81,24 +75,24 @@ Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetc
         *isFetchEnd = true;
         return GMERR_STORAGE_INVAILD_HEAP_ADDR;
     }
+    // 走到这说明能捞到数据
     *slot = currSlot;
 
     if (currSlot == endSlot) {
         *addr = INVAILD_HEAPADDR;
         *isFetchEnd = true;
-        return GMERR_NO_DATA;
+        return GMERR_OK;
     }
     // 获取下一个地址
     void *nextSlot = HeapGetSlotNextAddr(currSlot);
     addr->pageId = HeapGetPageId(nextSlot);
-    addr->pageId = HeapGetSlotId(nextSlot);
+    addr->slotId = HeapGetSlotId(nextSlot);
     return GMERR_OK;
 }
 
-Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
-{
-    uint32_t bufSize = container->labelInfo.recordLen;
+Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs) {
     HeapContainerT *container = labelCursor->container;
+    uint32_t bufSize = container->labelInfo.recordLen;
     if (IsHeapAddrInvaild(&labelCursor->heapAddr)) {
         // 没有数据
         if (container->recordCnt == 0) {
@@ -123,19 +117,21 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
         if (ret != GMERR_OK) {
             return ret;
         }
+        if (isFetchEnd) {
+            labelCursor->isFetchEnd = true; // 表示已经捞到最后一条数据
+        }
         if (fetchArgs->dealBuf != NULL) {
             void *tmpRecordBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, bufSize);
             if (tmpRecordBuf == NULL) {
                 log_error("Alloc tmpRecordBuf failed when SEHeapFetchNextWithCond. Alloc size id %u.", bufSize);
                 return GMERR_MEMORY_ALLOC_FAILED;
             }
-            memcpy(tmpRecordBuf, HeapGetDataPos(currSlot), bufSize)
+            memcpy(tmpRecordBuf, HeapGetDataPos(currSlot), bufSize);
             HeapBufT currHeapBuf = {.bufSize = bufSize, .buf = tmpRecordBuf};
             isMatchCond = fetchArgs->dealBuf(&currHeapBuf, fetchArgs->usrData);
             DbDynMemCtxFree(fetchArgs->memCtx, tmpRecordBuf);
         }
-    } while (isMatchCond);
-
+    } while (isMatchCond && !labelCursor->isFetchEnd);
 
     HeapBufT *heapBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, sizeof(HeapBufT) + bufSize);
     if (heapBuf == NULL) {
@@ -144,7 +140,7 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
     }
 
     heapBuf->bufSize = bufSize;
-    heapBuf->buf = (uint8_t *) heapBuf + bufSize;
+    heapBuf->buf = (uint8_t *)heapBuf + bufSize;
     memcpy(heapBuf->buf, HeapGetDataPos(currSlot), bufSize);
 
     fetchArgs->heapBuf = heapBuf;
