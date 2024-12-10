@@ -21,6 +21,59 @@ void TraceSingleRecord(SrLabelT *labelCtrl, HeapBufT *heapBuf)
     printf("\n");
 }
 
+typedef struct HeapCmpUserData {
+    SrPropertyT *properties;
+    SRCondT *cond;
+} HeapCmpUserDataT;
+
+//SR_LABEL_FILED_TYPE_INT32 = 0,
+//        SR_LABEL_FILED_TYPE_UINT32 = 1,
+//// SR_LABEL_FILED_TYPE_FLOAT,
+//SR_LABEL_FILED_TYPE_STRING,
+const void *GetBufByOffset(const void *buf, uint32_t offset) {
+    return (const uint8_t *)buf + offset;
+}
+
+bool IsCondMatch(SRCondCmpT cmpType, int32_t result) {
+    switch (cmpType) {
+        case OP_CMP_LARGE:
+            return result > 0;
+        case OP_CMP_EQUAL:
+            return result == 0;
+        case OP_CMP_LESS:
+            return result < 0;
+    }
+}
+
+bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData)
+{
+    HeapCmpUserDataT *cmpData = (HeapCmpUserDataT *)usrData;
+    SRCondT *cond = cmpData->cond;
+
+    if (cond->cmpType == OP_CMP_NULL) {
+        // 此种比较类型 全部匹配
+        return true;
+    }
+
+    SrPropertyT *properties = cmpData->properties;
+    SrPropertyT *property = &properties[cond->fldIdx];
+    // TODO: GetDmValue
+//    if (property->fieldType == SR_LABEL_FILED_TYPE_INT32) {
+//
+//    }
+
+    // 1.获取 buf 中的value
+    DmValueT dmValue = {0};
+    DmSetValue(&dmValue, GetBufByOffset(heapBuf->buf, property->fldOffset), property->fieldSize, property->fieldType);
+
+    // 2. 比较两个 value
+    int32_t result = DmCmpValue(dmValue, cond->dbValue);
+
+    // 3. 判断是否 match
+    bool isMatch = IsCondMatch(cond->cmpType, result);
+    return isMatch;
+}
+
 Status EEQueryData(QryStmtT *stmt)
 {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
@@ -47,7 +100,7 @@ Status EEQueryData(QryStmtT *stmt)
         FetchArgsT fetchArgs = {
                 .fetchCnt = 0,
                 .memCtx = stmt->memCtx,
-                .dealBuf = NULL,
+                .matchCond = EEQueryDataMatchCond,
                 .heapBuf = NULL,
                 .usrData = NULL
         };
@@ -59,5 +112,5 @@ Status EEQueryData(QryStmtT *stmt)
             DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
         }
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
-    return ret; 
+    return ret;
 }

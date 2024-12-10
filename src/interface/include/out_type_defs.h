@@ -112,6 +112,7 @@ typedef struct SrDbCreateLabelCtx {
 typedef enum {
     DB_TYPE_INT32 = 0,
     DB_TYPE_UINT32,
+    DB_TYPE_INTEGER = DB_TYPE_UINT32,
     DB_TYPE_STRING,
     DB_TYPE_BUTT,
 } DbValueTypeT;
@@ -123,7 +124,10 @@ typedef struct DbValue
     union {
         int32_t int32;
         uint32_t uint32;
-        char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
+        struct strings {
+            char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
+            uint32_t strLen;
+        };
     } value;
 } DbValueT;
 

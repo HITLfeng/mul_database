@@ -16,7 +16,6 @@ extern "C" {
 
 
 
-
 Status DmProcessSimpleRelOpCode(OperatorCode opCode, SimpleRelExecCtxT *execCtx);
 
 

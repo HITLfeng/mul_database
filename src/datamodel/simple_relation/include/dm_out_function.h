@@ -8,6 +8,22 @@
 extern "C" {
 #endif
 
+/**
+ * DMVALUE 相关接口
+ */
+
+typedef DbValueT DmValueT;
+typedef DbValueTypeT DmValueTypeT;
+void DmSetValue(DmValueT *dmValue, const void *value, uint32_t valueLen, DmValueTypeT type);
+/**
+ * 比较两个DMVALUE 类型不一致会出错
+ * @param dmValueLeft 左值
+ * @param dmValueRight 右值
+ * @return 1 代表 >  0 代表 =  -1 代表 <
+ */
+int32_t DmCmpValue(DmValueT *dmValueLeft, DmValueT *dmValueRight);
+
+
 typedef struct SrDbCtrl
 {
     char *dbName;

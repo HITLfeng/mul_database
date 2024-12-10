@@ -120,7 +120,7 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
         if (isFetchEnd) {
             labelCursor->isFetchEnd = true; // 表示已经捞到最后一条数据
         }
-        if (fetchArgs->dealBuf != NULL) {
+        if (fetchArgs->matchCond != NULL) {
             void *tmpRecordBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, bufSize);
             if (tmpRecordBuf == NULL) {
                 log_error("Alloc tmpRecordBuf failed when SEHeapFetchNextWithCond. Alloc size id %u.", bufSize);
@@ -128,7 +128,7 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
             }
             memcpy(tmpRecordBuf, HeapGetDataPos(currSlot), bufSize);
             HeapBufT currHeapBuf = {.bufSize = bufSize, .buf = tmpRecordBuf};
-            isMatchCond = fetchArgs->dealBuf(&currHeapBuf, fetchArgs->usrData);
+            isMatchCond = fetchArgs->matchCond(&currHeapBuf, fetchArgs->usrData);
             DbDynMemCtxFree(fetchArgs->memCtx, tmpRecordBuf);
         }
     } while (isMatchCond && !labelCursor->isFetchEnd);

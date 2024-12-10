@@ -67,15 +67,15 @@ typedef struct HeapBuf {
  * heapBuf 存储层会copy一份内存记录出来,不需要用户传入
  *
  */
-typedef bool(*UsrDealHeapBuf)(const HeapBufT *heapBuf, void *usrData);
+typedef bool(*MatchHeapBufCond)(const HeapBufT *heapBuf, void *usrData);
 
 // SEHeapFetchNextWithCond 捞取数据所用
 typedef struct FetchArgs {
     DbMemCtxT *memCtx; // memCtx 外部传入 用于申请该结构体内的内存
-    UsrDealHeapBuf dealBuf;
+    MatchHeapBufCond matchCond; // 是否符合撈取数据的条件
     uint32_t fetchCnt; // 从 heap 中捞取到 record 的总数
     HeapBufT *heapBuf; // 从 heap 中捞取的 heapBuf 链表 内存从memctx中申请 SEHeapFetchNextWithCond 每次返回一条
-    void *usrData; // 用户自定义数据 与dealBuf配合使用 用于判断捞出的slot是否符合条件
+    void *usrData; // 用户自定义数据 与matchCond配合使用 用于判断捞出的slot是否符合条件
 } FetchArgsT;
 
 SERunCtxT *SEGetRunCtx();
