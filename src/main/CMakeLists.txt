@@ -20,6 +20,7 @@ include_directories(${RUNTIME_PATH}/include)
 include_directories(${INTERFACE_PATH}/include)
 include_directories(${STORAGE_PATH}/include)
 include_directories(${COMMON_PATH}/include)
+include_directories(${DATAMODEL_PATH}/include)
 
 message(STATUS "include path: ${RUNTIME_PATH}/include")
 

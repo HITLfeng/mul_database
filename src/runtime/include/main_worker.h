@@ -6,11 +6,11 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <pthread.h>
+#include "dm_out_function.h"
 #include "out_type_defs.h"
-#include "../../common/include/common.h"
-#include "../../common/include/kv_memory.h"
-#include "../../common/include/db_memctx.h"
-#include "../../datamodel/simple_relation/include/dm_common.h"
+#include "common.h"
+#include "kv_memory.h"
+#include "db_memctx.h"
 
 #ifdef __cplusplus
 extern "C"

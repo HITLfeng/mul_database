@@ -76,8 +76,8 @@ void DmSetStringValue(DmValueT *dmValue, const void *value, uint32_t valueLen)
     switch (dmValue->type) {
         case DB_TYPE_STRING:
             DB_ASSERT(valueLen <= DB_VALUE_MAX_LENGTH);
-            memcpy(dmValue->value.str, value, valueLen);
-            dmValue->value.strLen = valueLen;
+            memcpy(dmValue->value.strings.str, value, valueLen);
+            dmValue->value.strings.strLen = valueLen;
             break;
         default:
             log_error("DmSetStringValue error. type(%u) is not defined.", dmValue->type);
@@ -141,19 +141,19 @@ int32_t DmCmpIntegerValue(DmValueT *dmValueLeft, DmValueT *dmValueRight) {
         case DB_TYPE_UINT32:
             return DmCmpUint32(dmValueLeft->value.uint32, dmValueRight->value.uint32);
         default:
-            log_error("DmCmpIntegerValue error. type(%u) is not defined.", dmValue->type);
+            log_error("DmCmpIntegerValue error. type(%u) is not defined.", dmValueLeft->type);
             break;
     }
 }
 
 int32_t DmCmpStringValue(DmValueT *dmValueLeft, DmValueT *dmValueRight)
 {
-    switch (dmValue->type) {
+    DB_ASSERT(dmValueLeft->type == dmValueRight->type);
+    switch (dmValueLeft->type) {
         case DB_TYPE_STRING:
-            DB_ASSERT(valueLen <= DB_VALUE_MAX_LENGTH);
-            return DmCmpString(dmValueLeft->value.str, dmValueRight->value.str);
+            return DmCmpString(dmValueLeft->value.strings.str, dmValueRight->value.strings.str);
         default:
-            log_error("DmCmpStringValue error. type(%u) is not defined.", dmValue->type);
+            log_error("DmCmpStringValue error. type(%u) is not defined.", dmValueLeft->type);
             break;
     }
 }
@@ -169,8 +169,8 @@ int32_t DmCmpValue(DmValueT *dmValueLeft, DmValueT *dmValueRight)
     DB_ASSERT(dmValueLeft->type == dmValueRight->type);
     if (IsIntegerDataType(dmValueLeft->type)) {
         return DmCmpIntegerValue(dmValueLeft, dmValueRight);
-    } else if (IsStringDataType(type)) {
+    } else if (IsStringDataType(dmValueLeft->type)) {
         return DmCmpStringValue(dmValueLeft, dmValueRight);
     }
-    log_warn("cmp value error and type is %u.", type);
+    log_warn("cmp value error and type is %u.", dmValueLeft->type);
 }

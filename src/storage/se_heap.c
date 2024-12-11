@@ -131,7 +131,14 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
             isMatchCond = fetchArgs->matchCond(&currHeapBuf, fetchArgs->usrData);
             DbDynMemCtxFree(fetchArgs->memCtx, tmpRecordBuf);
         }
-    } while (isMatchCond && !labelCursor->isFetchEnd);
+    } while (!isMatchCond && !labelCursor->isFetchEnd);
+
+    if (labelCursor->isFetchEnd && !isMatchCond) {
+        // 说明已经捞到最后一条数据了
+        fetchArgs->fetchCnt = 0;
+        fetchArgs->heapBuf = NULL;
+        return GMERR_NO_DATA;
+    }
 
     HeapBufT *heapBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, sizeof(HeapBufT) + bufSize);
     if (heapBuf == NULL) {

@@ -1,4 +1,4 @@
-#include "include/dm_common.h"
+#include "dm_common.h"
 
 SrDbCtrlManagerT *g_srDbCtrlManager = NULL;
 

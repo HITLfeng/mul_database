@@ -124,10 +124,10 @@ typedef struct DbValue
     union {
         int32_t int32;
         uint32_t uint32;
-        struct strings {
+        struct {
             char str[DB_VALUE_MAX_LENGTH]; // TODO: 后续改为 动态申请内存
             uint32_t strLen;
-        };
+        } strings;
     } value;
 } DbValueT;
 

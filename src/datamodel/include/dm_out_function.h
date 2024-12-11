@@ -3,6 +3,7 @@
 
 #include "vector_util.h"
 #include "out_type_defs.h"
+#include "interface_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -83,6 +84,17 @@ uint32_t GenSrTableId(void);
  * 根据labelId 获取labelCtrl
  */
 SrLabelT *DmGetLabelCtrlByLabelId(SrDbCtrlT *dbCtrl, uint32_t labelId);
+
+
+Status DMSrCreateDb(QryStmtT *stmt);
+Status DMSrDropDb(QryStmtT *stmt);
+Status DMSrCreateTable(QryStmtT *stmt);
+Status DMSrInsertData(QryStmtT *stmt);
+
+// Status DMSrGetDbDesc(QryStmtT *stmt);
+Status DMSrQueryTable(QryStmtT *stmt);
+
+Status DMExecSysviewEdit(QryStmtT *stmt);
 
 
 #ifdef __cplusplus

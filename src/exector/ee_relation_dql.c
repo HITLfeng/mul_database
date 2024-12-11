@@ -67,7 +67,7 @@ bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData)
     DmSetValue(&dmValue, GetBufByOffset(heapBuf->buf, property->fldOffset), property->fieldSize, property->fieldType);
 
     // 2. 比较两个 value
-    int32_t result = DmCmpValue(dmValue, cond->dbValue);
+    int32_t result = DmCmpValue(&dmValue, &cond->dbValue);
 
     // 3. 判断是否 match
     bool isMatch = IsCondMatch(cond->cmpType, result);
@@ -96,13 +96,14 @@ Status EEQueryData(QryStmtT *stmt)
         log_error("query data: open label cursor failed.");
         return ret;
     }
+    HeapCmpUserDataT cmpData = {.properties = labelCtrl->properties, .cond = &execCtx->cond};
     do {
         FetchArgsT fetchArgs = {
                 .fetchCnt = 0,
                 .memCtx = stmt->memCtx,
                 .matchCond = EEQueryDataMatchCond,
                 .heapBuf = NULL,
-                .usrData = NULL
+                .usrData = &cmpData
         };
         ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
         if (ret == GMERR_OK) {
@@ -112,5 +113,5 @@ Status EEQueryData(QryStmtT *stmt)
             DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
         }
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
-    return ret;
+    return ret == GMERR_NO_DATA ? GMERR_OK : ret;
 }

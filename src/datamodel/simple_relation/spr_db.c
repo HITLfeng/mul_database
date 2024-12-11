@@ -1,4 +1,4 @@
-#include "include/dm_common.h"
+#include "dm_common.h"
 
 // void DmClearSingleDbCtrl(QryStmtT *stmt)
 // {

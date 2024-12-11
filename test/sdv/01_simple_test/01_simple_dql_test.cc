@@ -18,13 +18,12 @@ class SimpleRelationDQLTest : public KVTest {
 };
 
 // 综合查询 ddl + dml + dql
-TEST_F(SimpleRelationDQLTest, TestMulOperation) {
+TEST_F(SimpleRelationDQLTest, TestMulOperation2) {
     DbConnectT *conn = (DbConnectT *)malloc(sizeof(DbConnectT));
     ASSERT_FALSE(conn == NULL);
     memset(conn, 0, sizeof(DbConnectT));
 
     ASSERT_EQ(GMERR_OK, KVCConnect(conn));
-
 
     uint32_t dbId = 0;
     ASSERT_EQ(GMERR_OK, SRCCreateDb(conn, "db_multi_dql", &dbId));
@@ -41,12 +40,20 @@ TEST_F(SimpleRelationDQLTest, TestMulOperation) {
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "libai", 50, "yupaochangjian", -100, "lishiming"));
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbao", 5, "xiaoniutuzhuang", 100, "xiaojiu"));
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep", 99, "xjzong"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep", 99, "xjzong"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep", 89, "xjzong"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 15, "noSleepa", 99, "xjzong1"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep", 99, "xjzong"));
+    ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbao", 5, "xiaoniutuzhuang", 100, "xiaojiu"));
 
     ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, NULL));
-    
-
+    std::cout << "-----------------------" << std::endl;
+    ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "age>5"));
+    std::cout << "-----------------------" << std::endl;
+    ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "luck<99"));
+    std::cout << "-----------------------" << std::endl;
+    ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "hobby=xiaoniutuzhuang"));
     ASSERT_EQ(GMERR_OK, KVCReleaseStmt(&stmt));
-
 
     ASSERT_EQ(GMERR_OK, SRCDeleteDb(conn, "db_multi_dql"));
 

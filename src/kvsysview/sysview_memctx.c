@@ -103,9 +103,7 @@ Status SysviewMain() {
     char inputMsg[64];
     while (true) {
         printf(">> please input you choice: \n");
-
         fgets(inputMsg, sizeof(inputMsg), stdin); // 使用fgets可以接受空格
-
         // 去掉换行符
         inputMsg[strcspn(inputMsg, "\n")] = 0;
 

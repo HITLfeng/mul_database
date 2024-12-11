@@ -1,11 +1,10 @@
 #ifndef __DM_COMMON_H__
 #define __DM_COMMON_H__
 
-#include "../../../interface/include/outfunction.h"
-#include "../../../common/include/vector_util.h"
-#include "../../../common/include/common.h"
+#include "outfunction.h"
+#include "vector_util.h"
+#include "common.h"
 #include "db_memctx.h"
-#include "interface_common.h"
 #include "dm_out_function.h"
 
 #ifdef __cplusplus
@@ -31,15 +30,7 @@ bool IsLabelNameExist(SrDbCtrlT *dbCtrl, const char *labelName);
 // void DmClearSingleDbCtrl(SrDbCtrlT *dbCtrl);
 void DmClearAllLabels(const char *dbName);
 
-Status DMSrCreateDb(QryStmtT *stmt);
-Status DMSrDropDb(QryStmtT *stmt);
-Status DMSrCreateTable(QryStmtT *stmt);
-Status DMSrInsertData(QryStmtT *stmt);
 
-// Status DMSrGetDbDesc(QryStmtT *stmt);
-Status DMSrQueryTable(QryStmtT *stmt);
-
-Status DMExecSysviewEdit(QryStmtT *stmt);
 
 
 

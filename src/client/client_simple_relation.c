@@ -289,7 +289,7 @@ void SetDbValue(DbValueT *DbValue, FiledTypeT type, char *value) {
         break;
     case SR_LABEL_FILED_TYPE_STRING:
         DbValue->type = SR_LABEL_FILED_TYPE_STRING;
-        strcpy(DbValue->value.str, value);
+        strcpy(DbValue->value.strings.str, value);
         break;
     default:
         DB_ASSERT(false);

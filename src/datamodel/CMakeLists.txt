@@ -13,9 +13,10 @@ SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
 SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 file(GLOB UTILS_LIB ${CMAKE_CURRENT_SOURCE_DIR}/simple_relation/*.c)
+file(GLOB UTILS_LIB2 ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
 # file(GLOB UTILS_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/simple_relation/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${COMMON_PATH}/include)
 message(STATUS " STORAGE_PATH include path: ${STORAGE_PATH}/include) ")
 include_directories(${STORAGE_PATH}/include)
@@ -25,4 +26,4 @@ include_directories(${INTERFACE_PATH}/include)
 # 设置动态库生成路径
 set(LIBRARY_OUTPUT_PATH ${LIB_SO_PATH})
 
-add_library(kvdatamodel SHARED ${UTILS_LIB})
+add_library(kvdatamodel SHARED ${UTILS_LIB} ${UTILS_LIB2})

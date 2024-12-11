@@ -2,6 +2,7 @@
 
 // TODO:后续抽离初始化函数
 #include "se_out_function.h"
+#include "dm_out_function.h"
 
 #define MEMCTX_TEST_ON 1
 #if MEMCTX_TEST_ON
