@@ -6,6 +6,9 @@
 
 void TraceSingleRecord(SrLabelT *labelCtrl, HeapBufT *heapBuf)
 {
+    if (!IsDebugInfoOn()) {
+        return;
+    }
     DB_POINT2(labelCtrl, heapBuf);
     DB_ASSERT(labelCtrl->recordLen == heapBuf->bufSize);
     for (uint32_t i = 0; i < labelCtrl->fieldCnt; ++i) {

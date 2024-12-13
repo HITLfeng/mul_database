@@ -9,6 +9,8 @@ function messageShow() {
     echo "======================================"
     echo "./kv-test --gtest_color=yes --gtest_filter=SimpleRelationJsonTest.*"
     echo "======================================"
+    echo "./kv-test --gtest_color=yes --gtest_filter=*.TestMulOperation2"
+    echo "======================================"
 }
 
 

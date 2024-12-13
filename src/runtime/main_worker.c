@@ -61,6 +61,31 @@ void *client_handler(void *arg) {
     return NULL;
 }
 
+Status MainWorkerBaseInit() {
+    // 初始化内存池
+    if (KVMemoryPoolInit() != GMERR_OK) {
+        log_error("MainWorkerStart, KVMemoryPoolInit failed");
+        return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
+    }
+
+    // 初始化 memctx 后续替代内存池
+    if (DbInitMemManager() != GMERR_OK) {
+        log_error("MainWorkerStart, DbInitMemManager failed");
+        return GMERR_STORAGE_MEMCTX_INIT_FAILED;
+    }
+    // 初始化配置文件
+    if (DmConfigInit() != GMERR_OK) {
+        log_error("MainWorkerStart, DmConfigInit failed");
+        return GMERR_CONFIG_INIT_FAILED;
+    }
+
+    if (SeInitPageCtrl() != GMERR_OK) {
+        log_error("MainWorkerStart, SeInitPageCtrl failed");
+        return GMERR_STORAGE_PAGE_CTRL_INIT_FAILED;
+    }
+    return GMERR_OK;
+}
+
 Status MainWorkerStart() {
     int serv_sock, clnt_sock;
     struct sockaddr_in serv_addr, clnt_addr;
@@ -96,22 +121,10 @@ Status MainWorkerStart() {
         log_error("MainWorkerStart, listen socket error");
         return GMERR_SOCKET_FAILED;
     }
-
-    // 初始化内存池
-    if (KVMemoryPoolInit() != GMERR_OK) {
-        log_error("MainWorkerStart, KVMemoryPoolInit failed");
-        return GMERR_STORAGE_MEMPOOL_INIT_FAILED;
-    }
-
-    // 初始化 memctx 后续替代内存池
-    if (DbInitMemManager() != GMERR_OK) {
-        log_error("MainWorkerStart, DbInitMemManager failed");
-        return GMERR_STORAGE_MEMCTX_INIT_FAILED;
-    }
-
-    if (SeInitPageCtrl() != GMERR_OK) {
-        log_error("MainWorkerStart, SeInitPageCtrl failed");
-        return GMERR_STORAGE_PAGE_CTRL_INIT_FAILED;
+    Status ret = MainWorkerBaseInit();
+    if (ret != GMERR_OK) {
+        log_error("MainWorkerStart, MainWorkerBaseInit failed");
+        return ret;
     }
 
 #if MEMCTX_TEST_ON

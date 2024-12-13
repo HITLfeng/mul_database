@@ -97,6 +97,11 @@ Status DMSrQueryTable(QryStmtT *stmt);
 Status DMExecSysviewEdit(QryStmtT *stmt);
 
 
+// 配置文件初始化
+Status DmConfigInit(void);
+// 是否开启内部trace调试信息
+bool IsDebugInfoOn(void);
+
 #ifdef __cplusplus
 }
 #endif
