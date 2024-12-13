@@ -95,6 +95,31 @@ CliStatus KVCRecv(DbConnectT *conn, MsgBufResponseT *msgBuf) {
     return GMERR_OK;
 }
 
+const char *TransOpcode2FuncName(OperatorCode opCode) {
+    switch (opCode) {
+    case OP_SIMREL_CREATE_DB:
+        return "[ SRCCreateDb ]";
+    case OP_SIMREL_DROP_DB:
+        return "[ SRCDeleteDb ]";
+    case OP_SIMREL_CREATE_TABLE:
+        return "[ SRCCreateLabelWithJson ]";
+    case OP_SIMREL_DROP_TABLE:
+        return "[ SRCDeleteLabel ]";
+    case OP_SIMREL_INSERT_DATA:
+        return "[ SRCInsertData ]";
+    case OP_SIMREL_DELETE_DATA:
+        return "[ SRCDeleteData ]";
+    case OP_SIMREL_QUERY_DATA:
+        return "[ SRCQueryDataWithCond ]";
+    case OP_SIMREL_DFX_DB_DESC:
+        return "[ SRCTraceDbDesc ]";
+    case OP_SIMREL_QUERY_TABLE:
+        return "[ SRCTraceDbDesc ]";
+    default:
+        return "[ NULL FUNCTION ]";
+    }
+}
+
 CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf, SRParseResponseCb cbExec,
                                         UsrDataBaseT *usrData) {
     DB_POINT2(conn, msgBuf);
@@ -103,7 +128,7 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
     if (ret != GMERR_OK) {
         return ret;
     }
-    log_info("send request succ. type is %u.", opCode);
+    log_info("%s [SEND...][CLIENT] send request succ. type is %u.", TransOpcode2FuncName(opCode), opCode);
 
     // 读取服务器返回的消息
     MsgBufResponseT respBuf = {0};
@@ -111,8 +136,7 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
     if (ret != GMERR_OK) {
         return ret;
     }
-    log_info("recv result succ. type is %u.", opCode);
-
+    log_info("%s [RECV...][CLIENT] recv result succ. type is %u.", TransOpcode2FuncName(opCode), opCode);
     // 如果不指定回调函数
     if (cbExec == NULL) {
         // 这里解析下服务端返回值，返回值不区分服务端客户端
@@ -122,7 +146,7 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
             log_error("CltParseBaseMsgBuf fail, type is %u, ret is %u.", opCode, result.ret);
             return ret;
         }
-        log_info("parse result succ, type is %u.", opCode);
+        log_info("%s [CLIENT][AFTER RECV][PARSE] parse result succ, type is %u.", TransOpcode2FuncName(opCode), opCode);
         return GMERR_OK;
     }
 
