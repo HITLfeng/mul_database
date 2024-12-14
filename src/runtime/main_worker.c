@@ -4,7 +4,7 @@
 #include "se_out_function.h"
 #include "dm_out_function.h"
 
-#define MEMCTX_TEST_ON 1
+#define MEMCTX_TEST_ON 0
 #if MEMCTX_TEST_ON
 // *******************
 // debug memCtx

@@ -86,6 +86,8 @@ void RtSRInitExecCtxByOpCode(QryStmtT *stmt, char *usrMsg, SimpleRelExecCtxT *ex
         execCtx->dbId = DeseriUint32M((uint8_t **)&bufCursor);
         break;
     case OP_SIMREL_QUERY:
+    case OP_SIMREL_DELETE:
+    case OP_SIMREL_UPDATE:
         execCtx->cond = *(SRCondT *)bufCursor;
         execCtx->dbId = execCtx->cond.dbId;
         execCtx->labelId = execCtx->cond.labelId;
@@ -281,6 +283,8 @@ Status RTProcessOpcode(OperatorCode opCode, char *usrMsg, char *resultBuf, uint3
     case OP_SIMREL_DFX_DB_DESC:
         // 改版后的查询！
     case OP_SIMREL_QUERY:
+    case OP_SIMREL_DELETE:
+    case OP_SIMREL_UPDATE:
         return RtHandleSimpleRelOpCode(opCode, usrMsg, resultBuf, bufLen);
     case OP_SYSVIEW_EDIT:
         return RtHandleSysViewEdit(opCode, usrMsg, resultBuf, bufLen);

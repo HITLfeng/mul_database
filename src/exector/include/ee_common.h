@@ -23,6 +23,13 @@ void InitLabelInfo(SrLabelT *label, SeLabelInfoT *labelInfo);
  */
 Status EEQueryData(QryStmtT *stmt);
 
+/**
+ * 根据cond删除数据
+ * @param stmt
+ * @return
+ */
+Status EEDeleteData(QryStmtT *stmt);
+
 #ifdef __cplusplus
 }
 #endif

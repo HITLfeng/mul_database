@@ -38,7 +38,8 @@ Status EEProcessSimpleRelationOpcode(QryStmtT *stmt)
             break;
         case OP_SIMREL_QUERY:
             return EEQueryData(stmt);
-
+        case OP_SIMREL_DELETE:
+            return EEDeleteData(stmt);
         default:
             break;
     }

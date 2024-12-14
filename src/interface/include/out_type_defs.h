@@ -39,6 +39,8 @@ typedef enum OperatorCode {
     // OP_INSERT_DATA,
     // *******************
     OP_SIMREL_QUERY,
+    OP_SIMREL_DELETE,
+    OP_SIMREL_UPDATE,
 
     OP_SIMREL_BUTT,
 

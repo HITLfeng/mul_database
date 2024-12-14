@@ -118,3 +118,47 @@ Status EEQueryData(QryStmtT *stmt)
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
     return ret == GMERR_NO_DATA ? GMERR_OK : ret;
 }
+
+
+Status EEDeleteData(QryStmtT *stmt)
+{
+    SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
+    // 找 dbId 是否存在
+    SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
+    if (dbCtrl == NULL) {
+        log_error("EEDeleteData: get dbCtrl failed.");
+        return GMERR_DATAMODEL_SRDB_ID_NOT_EXISTED;
+    }
+
+    // 找 labelId 是否存在
+    SrLabelT *labelCtrl = DmGetLabelCtrlByLabelId(dbCtrl, execCtx->labelId);
+    if (labelCtrl == NULL) {
+        log_error("EEDeleteData: get labelCtrl failed.");
+        return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
+    }
+    LabelCursorT labelCursor = (LabelCursorT) {0};
+    Status ret = SEHeapOpenLabelCursor(labelCtrl->labelId, &labelCursor);
+    if (ret != GMERR_OK) {
+        log_error("query data: open label cursor failed.");
+        return ret;
+    }
+    HeapCmpUserDataT cmpData = {.properties = labelCtrl->properties, .cond = &execCtx->cond};
+    do {
+        FetchArgsT fetchArgs = {
+                .fetchCnt = 0,
+                .memCtx = stmt->memCtx,
+                .matchCond = EEQueryDataMatchCond,
+                .heapBuf = NULL,
+                .usrData = &cmpData
+        };
+        ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
+        if (ret == GMERR_OK) {
+            TraceSingleRecord(labelCtrl, fetchArgs.heapBuf);
+        }
+        if (fetchArgs.heapBuf != NULL) {
+            DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
+        }
+    } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
+    return ret == GMERR_NO_DATA ? GMERR_OK : ret;
+}
+}

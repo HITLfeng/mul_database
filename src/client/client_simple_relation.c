@@ -377,3 +377,20 @@ CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr) {
     // 客户端服务端错误码混合返回
     return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
 }
+
+// 202412141000
+CliStatus SRCDeleteDataWithCond(CliStmtT *stmt, const char *conditionStr) {
+    DB_POINT(stmt);
+    SRCondT cond = {0};
+    PrepareCondition(stmt, conditionStr, &cond);
+    // 初始化 requestHeader
+    MsgBufRequestT msgBuf = {0};
+    SRCInitMsgBuf(&msgBuf, OP_SIMREL_DELETE);
+
+    // 序列化 msgBuf.requestMsg
+    char *bufCursor = msgBuf.requestMsg;
+    SRCSeriRequsetBuf((uint8_t **)&bufCursor, (void *)&cond, sizeof(cond));
+
+    // 客户端服务端错误码混合返回
+    return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
+}
