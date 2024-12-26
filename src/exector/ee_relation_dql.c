@@ -4,8 +4,7 @@
 #include <stdio.h>
 // tmp
 
-void TraceSingleRecord(SrLabelT *labelCtrl, HeapBufT *heapBuf)
-{
+void TraceSingleRecord(SrLabelT *labelCtrl, HeapBufT *heapBuf) {
     if (!IsDebugInfoOn()) {
         return;
     }
@@ -29,27 +28,24 @@ typedef struct HeapCmpUserData {
     SRCondT *cond;
 } HeapCmpUserDataT;
 
-//SR_LABEL_FILED_TYPE_INT32 = 0,
-//        SR_LABEL_FILED_TYPE_UINT32 = 1,
+// SR_LABEL_FILED_TYPE_INT32 = 0,
+//         SR_LABEL_FILED_TYPE_UINT32 = 1,
 //// SR_LABEL_FILED_TYPE_FLOAT,
-//SR_LABEL_FILED_TYPE_STRING,
-const void *GetBufByOffset(const void *buf, uint32_t offset) {
-    return (const uint8_t *)buf + offset;
-}
+// SR_LABEL_FILED_TYPE_STRING,
+const void *GetBufByOffset(const void *buf, uint32_t offset) { return (const uint8_t *)buf + offset; }
 
 bool IsCondMatch(SRCondCmpT cmpType, int32_t result) {
     switch (cmpType) {
-        case OP_CMP_LARGE:
-            return result > 0;
-        case OP_CMP_EQUAL:
-            return result == 0;
-        case OP_CMP_LESS:
-            return result < 0;
+    case OP_CMP_LARGE:
+        return result > 0;
+    case OP_CMP_EQUAL:
+        return result == 0;
+    case OP_CMP_LESS:
+        return result < 0;
     }
 }
 
-bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData)
-{
+bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData) {
     HeapCmpUserDataT *cmpData = (HeapCmpUserDataT *)usrData;
     SRCondT *cond = cmpData->cond;
 
@@ -61,9 +57,9 @@ bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData)
     SrPropertyT *properties = cmpData->properties;
     SrPropertyT *property = &properties[cond->fldIdx];
     // TODO: GetDmValue
-//    if (property->fieldType == SR_LABEL_FILED_TYPE_INT32) {
-//
-//    }
+    //    if (property->fieldType == SR_LABEL_FILED_TYPE_INT32) {
+    //
+    //    }
 
     // 1.获取 buf 中的value
     DmValueT dmValue = {0};
@@ -77,8 +73,7 @@ bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData)
     return isMatch;
 }
 
-Status EEQueryData(QryStmtT *stmt)
-{
+Status EEQueryData(QryStmtT *stmt) {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     // 找 dbId 是否存在
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
@@ -93,7 +88,7 @@ Status EEQueryData(QryStmtT *stmt)
         log_error("EEQueryData: get labelCtrl failed.");
         return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
     }
-    LabelCursorT labelCursor = (LabelCursorT) {0};
+    LabelCursorT labelCursor = (LabelCursorT){0};
     Status ret = SEHeapOpenLabelCursor(labelCtrl->labelId, &labelCursor);
     if (ret != GMERR_OK) {
         log_error("query data: open label cursor failed.");
@@ -101,13 +96,11 @@ Status EEQueryData(QryStmtT *stmt)
     }
     HeapCmpUserDataT cmpData = {.properties = labelCtrl->properties, .cond = &execCtx->cond};
     do {
-        FetchArgsT fetchArgs = {
-                .fetchCnt = 0,
-                .memCtx = stmt->memCtx,
-                .matchCond = EEQueryDataMatchCond,
-                .heapBuf = NULL,
-                .usrData = &cmpData
-        };
+        FetchArgsT fetchArgs = {.fetchCnt = 0,
+                                .memCtx = stmt->memCtx,
+                                .matchCond = EEQueryDataMatchCond,
+                                .heapBuf = NULL,
+                                .usrData = &cmpData};
         ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
         if (ret == GMERR_OK) {
             TraceSingleRecord(labelCtrl, fetchArgs.heapBuf);
@@ -119,9 +112,7 @@ Status EEQueryData(QryStmtT *stmt)
     return ret == GMERR_NO_DATA ? GMERR_OK : ret;
 }
 
-
-Status EEDeleteData(QryStmtT *stmt)
-{
+Status EEDeleteData(QryStmtT *stmt) {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     // 找 dbId 是否存在
     SrDbCtrlT *dbCtrl = DmGetDbCtrlByDbId(execCtx->dbId);
@@ -136,7 +127,7 @@ Status EEDeleteData(QryStmtT *stmt)
         log_error("EEDeleteData: get labelCtrl failed.");
         return GMERR_DATAMODEL_SRLABEL_ID_NOT_EXISTED;
     }
-    LabelCursorT labelCursor = (LabelCursorT) {0};
+    LabelCursorT labelCursor = (LabelCursorT){0};
     Status ret = SEHeapOpenLabelCursor(labelCtrl->labelId, &labelCursor);
     if (ret != GMERR_OK) {
         log_error("query data: open label cursor failed.");
@@ -144,13 +135,11 @@ Status EEDeleteData(QryStmtT *stmt)
     }
     HeapCmpUserDataT cmpData = {.properties = labelCtrl->properties, .cond = &execCtx->cond};
     do {
-        FetchArgsT fetchArgs = {
-                .fetchCnt = 0,
-                .memCtx = stmt->memCtx,
-                .matchCond = EEQueryDataMatchCond,
-                .heapBuf = NULL,
-                .usrData = &cmpData
-        };
+        FetchArgsT fetchArgs = {.fetchCnt = 0,
+                                .memCtx = stmt->memCtx,
+                                .matchCond = EEQueryDataMatchCond,
+                                .heapBuf = NULL,
+                                .usrData = &cmpData};
         ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
         if (ret == GMERR_OK) {
             TraceSingleRecord(labelCtrl, fetchArgs.heapBuf);
@@ -160,5 +149,4 @@ Status EEDeleteData(QryStmtT *stmt)
         }
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
     return ret == GMERR_NO_DATA ? GMERR_OK : ret;
-}
 }

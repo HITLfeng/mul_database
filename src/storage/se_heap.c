@@ -115,10 +115,15 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
         bool isFetchEnd = false;
         Status ret = HeapGetNextSlot(&labelCursor->heapAddr, &currSlot, container->lastRecordSlot, &isFetchEnd);
         if (ret != GMERR_OK) {
+            // 捞不到数据后这里可以正常返回 非出错
             return ret;
         }
         if (isFetchEnd) {
             labelCursor->isFetchEnd = true; // 表示已经捞到最后一条数据
+        }
+        DB_ASSERT(HeapGetSlotFlag(currSlot) != SE_SLOT_FREE);
+        if (HeapGetSlotFlag(currSlot) == SE_SLOT_DELETE) {
+            continue;
         }
         if (fetchArgs->matchCond != NULL) {
             void *tmpRecordBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, bufSize);
@@ -130,6 +135,8 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
             HeapBufT currHeapBuf = {.bufSize = bufSize, .buf = tmpRecordBuf};
             isMatchCond = fetchArgs->matchCond(&currHeapBuf, fetchArgs->usrData);
             DbDynMemCtxFree(fetchArgs->memCtx, tmpRecordBuf);
+        } else {
+            isMatchCond = true;
         }
     } while (!isMatchCond && !labelCursor->isFetchEnd);
 

@@ -13,6 +13,12 @@ extern "C"
 {
 #endif
 
+typedef enum {
+    SE_SLOT_FREE = 0,
+    SE_SLOT_USING = 1,
+    SE_SLOT_DELETE = 2,
+} SeSlotStateT;
+
 typedef struct SePageInfo {
     void *nextFreeSlot; // 指向本页下一处free slot
 
@@ -88,6 +94,12 @@ uint32_t HeapGetPageId(void *slot);
 
 void HeapSetSlotId(void *slot, uint32_t slotId);
 void HeapSetPageId(void *slot, uint32_t pageId);
+
+
+void HeapSetDeleteFlag(void *slot);
+void HeapSetUsingFlag(void *slot);
+void HeapSetFreeFlag(void *slot);
+SeSlotStateT HeapGetSlotFlag(void *slot);
 
  /**
   * 返回当前 slot 并将 addr 置于下一个记录处

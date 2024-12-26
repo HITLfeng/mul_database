@@ -9,8 +9,8 @@
 #define SE_INIT_PAGE_POOL_SIZE 360
 #define SE_PAGE_SIZE 4096
 
-// next addr + pre addr + pageId + slotId
-#define SE_PAGE_ROW_EXTRA_SIZE (sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t))
+// next addr + pre addr + pageId + slotId + isDelete(标记删除)
+#define SE_PAGE_ROW_EXTRA_SIZE (sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t) + sizeof(uint8_t))
 
 // typedef struct SePageCtrl {
 //     uint32_t pageCnt; // 当前的页数
@@ -190,6 +190,23 @@ void HeapSetPageId(void *slot, uint32_t pageId) {
     *(uint32_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *)) = pageId;
 }
 
+// 设置删除标志位
+void HeapSetDeleteFlag(void *slot) {
+    *(uint8_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t)) = SE_SLOT_DELETE;
+}
+
+void HeapSetUsingFlag(void *slot) {
+    *(uint8_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t)) = SE_SLOT_USING;
+}
+
+void HeapSetFreeFlag(void *slot) {
+    *(uint8_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t)) = SE_SLOT_USING;
+}
+
+SeSlotStateT HeapGetSlotFlag(void *slot) {
+    return *(uint8_t *)((uint8_t *)slot + sizeof(void *) + sizeof(void *) + sizeof(uint32_t) + sizeof(uint32_t));
+}
+
 void *HeapGetDataPos(void *slot) { return (void *)((uint8_t *)slot + SE_PAGE_ROW_EXTRA_SIZE); }
 
 void HeapInitPage(HeapContainerT *container, SePageT *page) {
@@ -260,12 +277,15 @@ Status HeapAllocAndInitNewPage(HeapContainerT *container, SePageT **outPage) {
 }
 
 void *GetSlotByAddr(HeapAddrT *addr) {
+    DB_POINT(addr);
     SePageCtrlT *pageCtrl = SeGetPageCtrlMng();
     uint32_t pageId = addr->pageId;
     SePageT *curPage = (SePageT *)DbHashMapFind(pageCtrl->usingPagePool, &pageId);
     if (curPage == NULL) {
+        log_warn("Page not found. Page id %u.", addr->pageId);
         return NULL;
     }
     DB_ASSERT(addr->slotId < curPage->pageInfo.slotTotalCnt);
-    return (uint8_t *)curPage->pageAddr + addr->slotId * curPage->pageInfo.slotSize;
+    return (uint8_t *)curPage->pageAddr +
+           addr->slotId * curPage->pageInfo.slotSize; // TODO:后续可以加判断看当前slot是否空闲
 }

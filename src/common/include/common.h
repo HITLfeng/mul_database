@@ -120,6 +120,11 @@ typedef uint32_t Status;
 #define GMERR_STORAGE_LABELCURSOR_USED 3001005
 // 无效的 HEAP ADDR
 #define GMERR_STORAGE_INVAILD_HEAP_ADDR 3001006
+// 传入的addr找不到对应slot
+#define GMERR_STORAGE_SLOT_NOT_EXIST 3001007
+// addr 找到的slot 状态非法
+#define GMERR_STORAGE_SLOT_INVAILD 3001008
+
 
 // ****************************************
 // DATAMODEL 模块错误码
