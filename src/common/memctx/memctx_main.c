@@ -800,6 +800,7 @@ void DbMemCtxDeleteInner(DbMemCtxT *memCtx) {
     // 将全部页上交给父节点
     DbMemCtxT *parentMemCtx = memCtx->parentMemCtx;
     PageListHeadInsert(memCtx->freePageList, parentMemCtx);
+    parentMemCtx->childNum--;
     DbDynMemCtxFree(parentMemCtx, memCtx);
 }
 

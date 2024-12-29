@@ -115,6 +115,12 @@ const char *TransOpcode2FuncName(OperatorCode opCode) {
         return "[ SRCTraceDbDesc ]";
     case OP_SIMREL_QUERY_TABLE:
         return "[ SRCTraceDbDesc ]";
+    case OP_SIMREL_DELETE:
+        return "[ OP_SIMREL_DELETE ]";
+    case OP_SIMREL_UPDATE:
+        return "[ OP_SIMREL_UPDATE ]";
+    case OP_SIMREL_QUERY:
+        return "[ OP_SIMREL_QUERY ]";
     default:
         return "[ NULL FUNCTION ]";
     }

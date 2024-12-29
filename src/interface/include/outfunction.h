@@ -78,6 +78,8 @@ CliStatus SRCTraceDbDesc(DbConnectT *conn, uint32_t dbId);
 
 CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr);
 
+CliStatus SRCDeleteDataWithCond(CliStmtT *stmt, const char *conditionStr);
+
 // =========================================
 // * 简单关系表相关函数 SIMPLE RELATION TABLE
 // =========================================

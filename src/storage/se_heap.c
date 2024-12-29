@@ -58,7 +58,9 @@ Status SEHeapOpenLabelCursor(uint32_t labelId, LabelCursorT *labelCursor) {
     return GMERR_OK;
 }
 
-inline static bool IsHeapAddrInvaild(HeapAddrT *addr) { return addr->pageId == HEAP_INVAILD_ID && addr->slotId == HEAP_INVAILD_ID; }
+inline static bool IsHeapAddrInvaild(HeapAddrT *addr) {
+    return addr->pageId == HEAP_INVAILD_ID && addr->slotId == HEAP_INVAILD_ID;
+}
 
 Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetchEnd) {
     if (*isFetchEnd == true) {
@@ -90,7 +92,9 @@ Status HeapGetNextSlot(HeapAddrT *addr, void **slot, void *endSlot, bool *isFetc
     return GMERR_OK;
 }
 
-Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs) {
+// 查找下一条符合条件的slot
+static Status HeapFetchNextSlotWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs, void **slot) {
+    *slot = NULL;
     HeapContainerT *container = labelCursor->container;
     uint32_t bufSize = container->labelInfo.recordLen;
     if (IsHeapAddrInvaild(&labelCursor->heapAddr)) {
@@ -146,7 +150,31 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
         fetchArgs->heapBuf = NULL;
         return GMERR_NO_DATA;
     }
+    *slot = currSlot;
+    return GMERR_OK;
+}
 
+Status SEHeapFetchAndDeleteWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs) {
+    void *currSlot = NULL;
+    Status ret = HeapFetchNextSlotWithCond(labelCursor, fetchArgs, &currSlot);
+    if (ret != GMERR_OK) {
+        // 可能返回无数据 为正常情况
+        return ret;
+    }
+    DB_ASSERT(currSlot != NULL);
+    HeapSetDeleteFlag(currSlot);
+    return GMERR_OK;
+}
+
+Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs) {
+    void *currSlot = NULL;
+    Status ret = HeapFetchNextSlotWithCond(labelCursor, fetchArgs, &currSlot);
+    if (ret != GMERR_OK) {
+        // 可能返回无数据 为正常情况
+        return ret;
+    }
+    DB_ASSERT(currSlot != NULL);
+    uint32_t bufSize = ((HeapContainerT *)(labelCursor->container))->labelInfo.recordLen;
     HeapBufT *heapBuf = DbDynMemCtxAlloc(fetchArgs->memCtx, sizeof(HeapBufT) + bufSize);
     if (heapBuf == NULL) {
         log_error("Alloc heapBuf failed when SEHeapFetchNextWithCond. Alloc size id %u.", sizeof(HeapBufT) + bufSize);

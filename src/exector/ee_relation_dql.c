@@ -140,12 +140,10 @@ Status EEDeleteData(QryStmtT *stmt) {
                                 .matchCond = EEQueryDataMatchCond,
                                 .heapBuf = NULL,
                                 .usrData = &cmpData};
-        ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
-        if (ret == GMERR_OK) {
-            TraceSingleRecord(labelCtrl, fetchArgs.heapBuf);
-        }
-        if (fetchArgs.heapBuf != NULL) {
-            DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
+        ret = SEHeapFetchAndDeleteWithCond(&labelCursor, &fetchArgs);
+        if (ret != GMERR_OK && ret != GMERR_NO_DATA) {
+            log_error("heap fetch and delete data failed.");
+            return ret;
         }
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
     return ret == GMERR_NO_DATA ? GMERR_OK : ret;

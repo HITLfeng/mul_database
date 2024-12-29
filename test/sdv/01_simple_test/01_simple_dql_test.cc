@@ -45,7 +45,7 @@ TEST_F(SimpleRelationDQLTest, TestMulOperation2) {
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 15, "noSleepa", 99, "xjzong1"));
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbaoge", 5, "noSleep", 99, "xjzong"));
     ASSERT_EQ(GMERR_OK, SRCInsertData(stmt, "jinbao", 5, "xiaoniutuzhuang", 100, "xiaojiu"));
-
+    std::cout << "-----------------------" << std::endl;
     ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, NULL));
     std::cout << "-----------------------" << std::endl;
     ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "age>5"));
@@ -53,6 +53,11 @@ TEST_F(SimpleRelationDQLTest, TestMulOperation2) {
     ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "luck<99"));
     std::cout << "-----------------------" << std::endl;
     ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, "hobby=xiaoniutuzhuang"));
+    std::cout << "-----------------------" << std::endl;
+    ASSERT_EQ(GMERR_OK, SRCDeleteDataWithCond(stmt, "hobby=xiaoniutuzhuang"));
+    std::cout << "-----------------------" << std::endl;
+    ASSERT_EQ(GMERR_OK, SRCQueryDataWithCond(stmt, NULL));
+    std::cout << "-----------------------" << std::endl;
     ASSERT_EQ(GMERR_OK, KVCReleaseStmt(&stmt));
 
     ASSERT_EQ(GMERR_OK, SRCDeleteDb(conn, "db_multi_dql"));

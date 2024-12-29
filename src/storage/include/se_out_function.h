@@ -126,6 +126,14 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
  */
 Status SEHeapFetchAllWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs);
 
+/**
+ * 调用此接口，每次删除一个 buf 数据
+ * @param labelCursor
+ * @param fetchArgs
+ * @return
+ */
+Status SEHeapFetchAndDeleteWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs);
+
 #ifdef __cplusplus
 }
 #endif
