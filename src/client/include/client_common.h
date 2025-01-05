@@ -30,6 +30,13 @@ typedef struct UsrDataSimpleRel {
     } srData;
 } UsrDataSimpleRelT;
 
+typedef struct UsrDataSimpleRelQuery {
+    uint32_t ret;
+    uint32_t fetchCnt;
+    uint32_t fetchBufLen;
+    uint8_t fetchBuf[BUF_SIZE];
+} UsrDataSimpleRelQueryT;
+
 typedef struct UsrDataSimpleRelStmt {
     uint32_t ret;
     CliStmtT *stmt;
@@ -49,6 +56,8 @@ CliStatus KVCSendRequestAndRecvResponse(DbConnectT *conn, MsgBufRequestT *msgBuf
 void CltParseBaseMsgBuf(MsgBufResponseT *respBuf, UsrDataBaseT *result);
 
 void SRCInitMsgBuf(MsgBufRequestT *msgBuf, OperatorCode opCode);
+
+void CliTraceQueryData(CliTableSchemaT *tableSchema, UsrDataSimpleRelQueryT *queryData, const char *conditionStr);
 
 #ifdef __cplusplus
 }

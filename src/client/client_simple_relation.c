@@ -362,6 +362,25 @@ void PrepareCondition(CliStmtT *stmt, const char *condition, SRCondT *cond) {
 
 // 20241127
 // 目前只支持一个查询条件 > = <
+void SRParseQueryData(uint8_t **respBuf, UsrDataBaseT *result) {
+    DB_POINT2(respBuf, result);
+    // 1.解析服务端返回值
+    MsgBufResponseHeadT *respHead = (MsgBufResponseHeadT *)*respBuf;
+    if (respHead->status != GMERR_OK) {
+        log_error("SrParseCreateTableRspCb error, server status = %d", respHead->status);
+        return;
+    }
+    // 2.解析数据
+    *respBuf += sizeof(MsgBufResponseHeadT);
+    UsrDataSimpleRelQueryT *srRes = (UsrDataSimpleRelQueryT *)result;
+
+    srRes->ret = respHead->status;
+    srRes->fetchCnt = DeseriUint32M(respBuf);
+    srRes->fetchBufLen = DeseriUint32M(respBuf);
+    DB_ASSERT(srRes->fetchBufLen <= BUF_SIZE);
+    memcpy(srRes->fetchBuf, *respBuf, srRes->fetchBufLen);
+}
+
 CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr) {
     DB_POINT(stmt);
     SRCondT cond = {0};
@@ -373,9 +392,21 @@ CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr) {
     // 序列化 msgBuf.requestMsg
     char *bufCursor = msgBuf.requestMsg;
     SRCSeriRequsetBuf((uint8_t **)&bufCursor, (void *)&cond, sizeof(cond));
+    UsrDataSimpleRelQueryT queryData = {0};
 
     // 客户端服务端错误码混合返回
-    return KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, NULL, NULL);
+    Status ret = KVCSendRequestAndRecvResponse(stmt->conn, &msgBuf, SRParseQueryData, (UsrDataBaseT *)&queryData);
+    if (ret != GMERR_OK) {
+        log_error("CLIENT: send request and get response fail.");
+        return ret;
+    }
+    if (queryData.ret != GMERR_OK) {
+        log_error("SERVER: query data fail, ret is %u.", queryData.ret);
+        return GMERR_OK;
+    }
+    // 客户端根据buf打印数据
+    CliTraceQueryData(stmt->tableSchema, &queryData, conditionStr);
+    return GMERR_OK;
 }
 
 // 202412141000

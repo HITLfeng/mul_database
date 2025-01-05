@@ -175,6 +175,7 @@ typedef struct CliProperty {
     uint32_t fldSize; // 字段长度 只支持定长
     uint8_t value[SR_FIELD_VALUE_MAX_LENGTH]; // 字段值
     uint8_t fldName[SR_FIELD_NAME_MAX_LENGTH]; // 字段名
+    uint32_t fldOffset; // 字段偏移
 } CliPropertyT;
 typedef struct CliTableSchema {
     uint32_t dbId;

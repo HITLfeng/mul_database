@@ -73,6 +73,18 @@ bool EEQueryDataMatchCond(const HeapBufT *heapBuf, void *usrData) {
     return isMatch;
 }
 
+void EEInitFetchArgs(FetchArgsT *fetchArgs, HeapCmpUserDataT *cmpData, DbMemCtxT *memCtx) {
+    DB_ASSERT(fetchArgs != NULL);
+    fetchArgs->fetchCnt = 0;
+    fetchArgs->memCtx = memCtx;
+    fetchArgs->matchCond = EEQueryDataMatchCond;
+    fetchArgs->heapBuf = NULL;
+    fetchArgs->usrData = cmpData;
+    DbVectorInit(&(fetchArgs->dataVector), sizeof(HeapBufT), memCtx);
+}
+
+void EEReleaseFetchArgs(FetchArgsT *fetchArgs) { DbVectorDestroy(&(fetchArgs->dataVector)); }
+
 Status EEQueryData(QryStmtT *stmt) {
     SimpleRelExecCtxT *execCtx = (SimpleRelExecCtxT *)stmt->entry;
     // 找 dbId 是否存在
@@ -95,20 +107,41 @@ Status EEQueryData(QryStmtT *stmt) {
         return ret;
     }
     HeapCmpUserDataT cmpData = {.properties = labelCtrl->properties, .cond = &execCtx->cond};
+    FetchArgsT fetchArgs = {0};
+    EEInitFetchArgs(&fetchArgs, &cmpData, stmt->memCtx);
     do {
-        FetchArgsT fetchArgs = {.fetchCnt = 0,
-                                .memCtx = stmt->memCtx,
-                                .matchCond = EEQueryDataMatchCond,
-                                .heapBuf = NULL,
-                                .usrData = &cmpData};
         ret = SEHeapFetchNextWithCond(&labelCursor, &fetchArgs);
         if (ret == GMERR_OK) {
             TraceSingleRecord(labelCtrl, fetchArgs.heapBuf);
         }
         if (fetchArgs.heapBuf != NULL) {
-            DbDynMemCtxFree(fetchArgs.memCtx, fetchArgs.heapBuf);
+            ret = DbVectorAppendItem(&(fetchArgs.dataVector), fetchArgs.heapBuf);
+            if (ret != GMERR_OK) {
+                log_error("EEQueryData: append data to vector failed.");
+                return ret;
+            }
         }
     } while (ret != GMERR_NO_DATA && !labelCursor.isFetchEnd);
+
+    // 设置返回信息 retEntry
+    // 统一申请内存
+    if (fetchArgs.fetchCnt > 0) {
+        void *retBuf = DbDynMemCtxAlloc(stmt->memCtx, labelCtrl->recordLen * fetchArgs.fetchCnt);
+        if (retBuf == NULL) {
+            log_error("EEQueryData: alloc retEntry failed.");
+            return GMERR_MEMORY_ALLOC_FAILED;
+        }
+        uint8_t *retCursor = retBuf;
+        for (uint32_t i = 0; i < fetchArgs.fetchCnt; ++i) {
+            HeapBufT *heapBuf = (HeapBufT *)DbVectorGetItem(&(fetchArgs.dataVector), i);
+            memcpy(retCursor, heapBuf->buf, heapBuf->bufSize);
+            retCursor += heapBuf->bufSize;
+            DbDynMemCtxFree(fetchArgs.memCtx, heapBuf->buf); // 由memCtx delete 统一释放
+        }
+        stmt->retEntry = retBuf;
+        stmt->retEntryBufLen = labelCtrl->recordLen * fetchArgs.fetchCnt;
+    }
+    EEReleaseFetchArgs(&fetchArgs);
     return ret == GMERR_NO_DATA ? GMERR_OK : ret;
 }
 

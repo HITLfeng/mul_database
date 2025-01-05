@@ -5,6 +5,7 @@
 #include "common.h"
 #include "db_memctx.h"
 #include "kv_map.h"
+#include "vector_util.h"
 
 // 对外接口 使用 SE 开头
 
@@ -27,9 +28,8 @@ extern "C" {
 
 // void SEFixedHeapInsertRow(FixedHeapT *heap, void *rowBuf);
 
-
 /**
- * 建立一个 map 
+ * 建立一个 map
  * key: labelId value: container
  */
 
@@ -52,9 +52,9 @@ typedef struct SeLabelInfo {
 
 typedef struct LabelCursor {
     uint32_t labelId;
-    void *container; // TODO: 后续改为使用seInatance 避免暴露给外部模块
+    void *container;    // TODO: 后续改为使用seInatance 避免暴露给外部模块
     HeapAddrT heapAddr; // 当前查询到的地址
-    bool isFetchEnd; // 标志当前 cursor 是否已经查询完所有数据
+    bool isFetchEnd;    // 标志当前 cursor 是否已经查询完所有数据
 } LabelCursorT;
 
 // SE 吐出去的 buf
@@ -67,15 +67,16 @@ typedef struct HeapBuf {
  * heapBuf 存储层会copy一份内存记录出来,不需要用户传入
  *
  */
-typedef bool(*MatchHeapBufCond)(const HeapBufT *heapBuf, void *usrData);
+typedef bool (*MatchHeapBufCond)(const HeapBufT *heapBuf, void *usrData);
 
 // SEHeapFetchNextWithCond 捞取数据所用
 typedef struct FetchArgs {
-    DbMemCtxT *memCtx; // memCtx 外部传入 用于申请该结构体内的内存
+    DbMemCtxT *memCtx;          // memCtx 外部传入 用于申请该结构体内的内存
     MatchHeapBufCond matchCond; // 是否符合撈取数据的条件
-    uint32_t fetchCnt; // 从 heap 中捞取到 record 的总数
+    uint32_t fetchCnt;          // 从 heap 中捞取到 record 的总数
     HeapBufT *heapBuf; // 从 heap 中捞取的 heapBuf 链表 内存从memctx中申请 SEHeapFetchNextWithCond 每次返回一条
-    void *usrData; // 用户自定义数据 与matchCond配合使用 用于判断捞出的slot是否符合条件
+    void *usrData;        // 用户自定义数据 与matchCond配合使用 用于判断捞出的slot是否符合条件
+    DbVectorT dataVector; // 用于存储捞取到的数据
 } FetchArgsT;
 
 SERunCtxT *SEGetRunCtx();

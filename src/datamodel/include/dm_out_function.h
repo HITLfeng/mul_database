@@ -56,7 +56,7 @@ typedef struct SrLabel
     uint32_t fieldCnt;       // feild 个数
     SrPropertyT *properties; // 属性数组
     // FixedHeapT heapRow; // 存储记录数
-    uint32_t recordLen; // 记录长度 TODO: 还没有赋值
+    uint32_t recordLen; // 记录长度
 } SrLabelT;
 
 typedef struct SrCreateLabelCtx

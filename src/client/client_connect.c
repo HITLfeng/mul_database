@@ -177,12 +177,15 @@ void SrParseTable(CliStmtT *stmt, uint8_t **bufCursor) {
     tblSchema->labelId = stmt->labelId;
     tblSchema->propertyCnt = fldNum;
 
+    uint32_t fldOff = 0;
     for (uint32_t i = 0; i < fldNum; ++i) {
         CliPropertyT *property = &tblSchema->properties[i];
         memset(property, 0, sizeof(CliPropertyT));
         DeseriStringM(bufCursor, property->fldName);
         property->type = DeseriUint32M(bufCursor);
         property->fldSize = DeseriUint32M(bufCursor);
+        property->fldOffset = fldOff;
+        fldOff += property->fldSize;
     }
     stmt->tableSchema = tblSchema;
 }

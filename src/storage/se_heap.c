@@ -146,7 +146,7 @@ static Status HeapFetchNextSlotWithCond(LabelCursorT *labelCursor, FetchArgsT *f
 
     if (labelCursor->isFetchEnd && !isMatchCond) {
         // 说明已经捞到最后一条数据了
-        fetchArgs->fetchCnt = 0;
+        // fetchArgs->fetchCnt = 0;
         fetchArgs->heapBuf = NULL;
         return GMERR_NO_DATA;
     }
@@ -182,10 +182,10 @@ Status SEHeapFetchNextWithCond(LabelCursorT *labelCursor, FetchArgsT *fetchArgs)
     }
 
     heapBuf->bufSize = bufSize;
-    heapBuf->buf = (uint8_t *)heapBuf + bufSize;
+    heapBuf->buf = (uint8_t *)heapBuf + sizeof(HeapBufT);
     memcpy(heapBuf->buf, HeapGetDataPos(currSlot), bufSize);
 
     fetchArgs->heapBuf = heapBuf;
-    fetchArgs->fetchCnt = 1;
+    fetchArgs->fetchCnt++;
     return GMERR_OK;
 }
