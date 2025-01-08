@@ -376,9 +376,11 @@ void SRParseQueryData(uint8_t **respBuf, UsrDataBaseT *result) {
 
     srRes->ret = respHead->status;
     srRes->fetchCnt = DeseriUint32M(respBuf);
-    srRes->fetchBufLen = DeseriUint32M(respBuf);
-    DB_ASSERT(srRes->fetchBufLen <= BUF_SIZE);
-    memcpy(srRes->fetchBuf, *respBuf, srRes->fetchBufLen);
+    if (srRes->fetchCnt > 0) {
+        srRes->fetchBufLen = DeseriUint32M(respBuf);
+        DB_ASSERT(srRes->fetchBufLen <= BUF_SIZE);
+        memcpy(srRes->fetchBuf, *respBuf, srRes->fetchBufLen);
+    }
 }
 
 CliStatus SRCQueryDataWithCond(CliStmtT *stmt, const char *conditionStr) {

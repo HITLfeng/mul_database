@@ -155,12 +155,12 @@ void RtSRSetResultBufByOpCode(char *resultBuf, QryStmtT *stmt) {
     case OP_SIMREL_DELETE:
     case OP_SIMREL_UPDATE:
         // TODO: 暂时不支持分批返回
-        SeriUint32((uint8_t **)&bufCursor, stmt->fetchCnt);
+        SeriUint32M((uint8_t **)&bufCursor, stmt->fetchCnt);
         if (stmt->fetchCnt > 0) {
             uint8_t *retBuf = stmt->retEntry;
             DB_ASSERT(retBuf != NULL);
             DB_ASSERT(stmt->retEntryBufLen <= BUF_SIZE);
-            SeriUint32((uint8_t **)&bufCursor, stmt->retEntryBufLen);
+            SeriUint32M((uint8_t **)&bufCursor, stmt->retEntryBufLen);
             memcpy(bufCursor, retBuf, stmt->retEntryBufLen);
         }
         break;

@@ -132,12 +132,14 @@ Status EEQueryData(QryStmtT *stmt) {
             return GMERR_MEMORY_ALLOC_FAILED;
         }
         uint8_t *retCursor = retBuf;
+        // TODO: 后续改为数据分批返回 现在先不处理，超过部分自动截断
         for (uint32_t i = 0; i < fetchArgs.fetchCnt; ++i) {
             HeapBufT *heapBuf = (HeapBufT *)DbVectorGetItem(&(fetchArgs.dataVector), i);
             memcpy(retCursor, heapBuf->buf, heapBuf->bufSize);
             retCursor += heapBuf->bufSize;
             DbDynMemCtxFree(fetchArgs.memCtx, heapBuf->buf); // 由memCtx delete 统一释放
         }
+        stmt->fetchCnt = fetchArgs.fetchCnt;
         stmt->retEntry = retBuf;
         stmt->retEntryBufLen = labelCtrl->recordLen * fetchArgs.fetchCnt;
     }

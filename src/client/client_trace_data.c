@@ -30,19 +30,20 @@ void TraceAllRecord(CliTableSchemaT *tableSchema, UsrDataSimpleRelQueryT *queryD
     for (uint32_t i = 0; i < queryData->fetchCnt; ++i) {
         // 记录单挑记录
         for (uint32_t j = 0; j < tableSchema->propertyCnt; ++j) {
-            printf("| %-10s", bufCursor);
-            bufCursor += tableSchema->properties[j].type;
+            // printf("| %-10s", bufCursor);
+            // bufCursor += tableSchema->properties[j].type;
 
             CliPropertyT *properties = &tableSchema->properties[j];
             if (properties->type == SR_LABEL_FILED_TYPE_UINT32) {
-                printf("| %10u  ", i, *(uint32_t *)(bufCursor + properties->fldOffset));
+                printf("| %10u  ", *(uint32_t *)(bufCursor + properties->fldOffset));
             } else if (properties->type == SR_LABEL_FILED_TYPE_INT32) {
-                printf("| %10d  ", i, *(int32_t *)((uint8_t *)bufCursor + properties->fldOffset));
+                printf("| %10d  ", *(int32_t *)((uint8_t *)bufCursor + properties->fldOffset));
             } else {
-                printf("| %s    ", i, (uint8_t *)((uint8_t *)bufCursor + properties->fldOffset));
+                printf("| %s    ", (uint8_t *)((uint8_t *)bufCursor + properties->fldOffset));
             }
-            printf("| \n");
+            bufCursor += properties->fldOffset;
         }
+        printf("| \n");
     }
     TraceOneLine(tableSchema->propertyCnt);
 }
